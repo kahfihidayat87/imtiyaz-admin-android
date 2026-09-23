@@ -3,17 +3,20 @@ package com.imtiyaztour.admin
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -26,6 +29,8 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+data class AdminTab(val key: String, val label: String, val icon: ImageVector)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminApp() {
@@ -35,9 +40,37 @@ fun AdminApp() {
     var editingJamaah by remember { mutableStateOf<JamaahSummary?>(null) }
 
     if (!isLoggedIn) {
-        LoginScreen(onLoggedIn = { isLoggedIn = true })
+        LoginScreen(onLoggedIn = { isLoggedIn = true; selectedTab = 0 })
         return
     }
+
+    // Role: "admin" | "keuangan" | "tl"
+    val role = Prefs.getRole(context).lowercase()
+
+    // Tab berbeda per role (RBAC)
+    val tabs: List<AdminTab> = when (role) {
+        "keuangan" -> listOf(
+            AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
+            AdminTab("jamaah", "Jamaah", Icons.Default.People),
+            AdminTab("saya", "Saya", Icons.Default.AccountCircle)
+        )
+        "tl" -> listOf(
+            AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
+            AdminTab("kanal", "Kanal", Icons.Default.Radio),
+            AdminTab("info", "Info", Icons.Default.Campaign),
+            AdminTab("saya", "Saya", Icons.Default.AccountCircle)
+        )
+        else -> listOf( // admin (default)
+            AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
+            AdminTab("jamaah", "Jamaah", Icons.Default.People),
+            AdminTab("kanal", "Kanal", Icons.Default.Radio),
+            AdminTab("info", "Info", Icons.Default.Campaign),
+            AdminTab("saya", "Saya", Icons.Default.AccountCircle)
+        )
+    }
+
+    if (selectedTab >= tabs.size) selectedTab = 0
+    val currentTabKey = tabs.getOrNull(selectedTab)?.key ?: "dashboard"
 
     Scaffold(
         topBar = {
@@ -45,7 +78,7 @@ fun AdminApp() {
                 title = {
                     Column {
                         Text("Imtiyaz Admin", fontWeight = FontWeight.Bold, color = AdminPrimary)
-                        Text("Panel Manajemen", fontSize = 10.sp, color = AdminTextGray)
+                        Text("Panel Manajemen - " + role.uppercase(), fontSize = 10.sp, color = AdminTextGray)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
@@ -53,43 +86,21 @@ fun AdminApp() {
         },
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
-                    label = { Text("Dashboard", fontSize = 10.sp) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.People, contentDescription = null) },
-                    label = { Text("Jamaah", fontSize = 10.sp) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.Radio, contentDescription = null) },
-                    label = { Text("Kanal", fontSize = 10.sp) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
-                    icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
-                    label = { Text("Info", fontSize = 10.sp) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 4,
-                    onClick = { selectedTab = 4 },
-                    icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
-                    label = { Text("Saya", fontSize = 10.sp) }
-                )
+                tabs.forEachIndexed { index, tab ->
+                    NavigationBarItem(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        icon = { Icon(tab.icon, contentDescription = null) },
+                        label = { Text(tab.label, fontSize = 10.sp) }
+                    )
+                }
             }
         }
     ) { padding ->
         Box(Modifier.padding(padding)) {
-            when (selectedTab) {
-                0 -> DashboardScreen()
-                1 -> {
+            when (currentTabKey) {
+                "dashboard" -> DashboardScreen()
+                "jamaah" -> {
                     if (editingJamaah != null) {
                         EditJamaahScreen(
                             jamaah = editingJamaah!!,
@@ -100,11 +111,12 @@ fun AdminApp() {
                         JamaahListScreen(onJamaahClick = { editingJamaah = it })
                     }
                 }
-                2 -> KanalListScreen()
-                3 -> PengumumanScreen()
-                4 -> SayaScreen(onLoggedOut = {
+                "kanal" -> KanalListScreen()
+                "info" -> PengumumanScreen()
+                "saya" -> SayaScreen(onLoggedOut = {
                     isLoggedIn = false
                     selectedTab = 0
+                    editingJamaah = null
                 })
             }
         }

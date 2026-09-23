@@ -71,15 +71,18 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
                     label = { Text(s, fontSize = 10.sp) })
             }
         }
-        Spacer(Modifier.height(12.dp))
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD)),
-            shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth()) {
-            Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Tour Leader", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
-                    Text("Boleh bicara di Radio TL", fontSize = 10.sp, color = Color(0xFF92400E))
+        // Toggle TL hanya untuk role admin (RBAC)
+        if (Prefs.getRole(context).lowercase() == "admin") {
+            Spacer(Modifier.height(12.dp))
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD)),
+                shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Tour Leader", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF92400E))
+                        Text("Boleh bicara di Radio TL", fontSize = 10.sp, color = Color(0xFF92400E))
+                    }
+                    Switch(checked = isTL, onCheckedChange = { v -> isTL = v })
                 }
-                Switch(checked = isTL, onCheckedChange = { isTL = it })
             }
         }
 
