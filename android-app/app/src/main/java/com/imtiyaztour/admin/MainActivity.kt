@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Radio
@@ -52,6 +54,7 @@ fun AdminApp() {
         "keuangan" -> listOf(
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
+            AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
         "tl" -> listOf(
@@ -63,6 +66,7 @@ fun AdminApp() {
         else -> listOf( // admin (default)
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
+            AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
@@ -111,6 +115,7 @@ fun AdminApp() {
                         JamaahListScreen(onJamaahClick = { editingJamaah = it })
                     }
                 }
+                "bukti" -> BuktiListScreen()
                 "kanal" -> KanalListScreen()
                 "info" -> PengumumanScreen()
                 "saya" -> SayaScreen(onLoggedOut = {

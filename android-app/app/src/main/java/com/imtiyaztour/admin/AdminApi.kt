@@ -44,6 +44,15 @@ interface AdminApiService {
 
     @POST("wp-json/imtiyaz/v1/admin-kanal-delete")
     suspend fun kanalDelete(@Body body: Map<String, String>): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-bukti-list")
+    suspend fun buktiList(@Body body: Map<String, String>): BuktiListResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-bukti-approve")
+    suspend fun buktiApprove(@Body body: Map<String, String>): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-bukti-reject")
+    suspend fun buktiReject(@Body body: Map<String, String>): SimpleResponse
 }
 
 object AdminApiClient {

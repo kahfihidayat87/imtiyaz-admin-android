@@ -107,3 +107,24 @@ data class KanalSaveResponse(
     val nama: String? = null,
     val error: String? = null
 )
+
+
+data class BuktiItem(
+    val id: Int,
+    val nama: String,
+    val paket_id: String? = null,
+    val kanal_id: String? = null,
+    val total_tagihan: Long = 0L,
+    val sudah_dibayar: Long = 0L,
+    val sisa_tagihan: Long = 0L,
+    val status_pembayaran: String = "",
+    val bukti_transfer: String? = null,
+    val modified_at: Long = 0L
+)
+
+data class BuktiListResponse(
+    val success: Boolean? = null,
+    val total: Int = 0,
+    val list: List<BuktiItem> = emptyList(),
+    val error: String? = null
+)
