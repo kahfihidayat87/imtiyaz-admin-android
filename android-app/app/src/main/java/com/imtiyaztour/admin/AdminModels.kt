@@ -128,3 +128,33 @@ data class BuktiListResponse(
     val list: List<BuktiItem> = emptyList(),
     val error: String? = null
 )
+
+
+data class JamaahDetailData(
+    val id: Int = 0,
+    val nama: String = "",
+    val username: String? = null,
+    val paket_id: String? = null,
+    val kanal_id: String? = null,
+    val is_tour_leader: Boolean = false,
+    val total_tagihan: Long = 0L,
+    val sudah_dibayar: Long = 0L,
+    val sisa_tagihan: Long = 0L,
+    val status_pembayaran: String = "Belum Lunas",
+    val bukti_transfer: String? = null,
+    val checklist_dokumen: Map<String, Boolean>? = null,
+    val dokumen_list: Map<String, String>? = null
+)
+
+data class JamaahDetailResponse(
+    val success: Boolean? = null,
+    val jamaah: JamaahDetailData? = null,
+    val error: String? = null
+)
+
+data class ChecklistUpdateRequest(
+    val admin_id: String,
+    val token: String,
+    val jamaah_id: String,
+    val checklist: Map<String, Boolean>
+)

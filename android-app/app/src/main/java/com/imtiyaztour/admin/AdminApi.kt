@@ -31,7 +31,7 @@ interface AdminApiService {
     suspend fun jamaahUpdate(@Body body: Map<String, String>): SimpleResponse
 
     @POST("wp-json/imtiyaz/v1/admin-checklist-update")
-    suspend fun checklistUpdate(@Body body: Map<String, String>): SimpleResponse
+    suspend fun checklistUpdate(@Body body: ChecklistUpdateRequest): SimpleResponse
 
     @POST("wp-json/imtiyaz/v1/admin-toggle-tl")
     suspend fun toggleTL(@Body body: Map<String, String>): SimpleResponse
@@ -44,6 +44,13 @@ interface AdminApiService {
 
     @POST("wp-json/imtiyaz/v1/admin-kanal-delete")
     suspend fun kanalDelete(@Body body: Map<String, String>): SimpleResponse
+
+    @retrofit2.http.GET("wp-json/imtiyaz/v1/admin-jamaah/{id}")
+    suspend fun jamaahDetail(
+        @retrofit2.http.Path("id") id: Int,
+        @retrofit2.http.Query("admin_id") adminId: String,
+        @retrofit2.http.Query("token") token: String
+    ): JamaahDetailResponse
 
     @POST("wp-json/imtiyaz/v1/admin-bukti-list")
     suspend fun buktiList(@Body body: Map<String, String>): BuktiListResponse
