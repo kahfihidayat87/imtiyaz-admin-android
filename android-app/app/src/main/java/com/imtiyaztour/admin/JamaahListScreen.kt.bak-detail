@@ -52,11 +52,8 @@ fun JamaahListScreen(onJamaahClick: (JamaahSummary) -> Unit = {}) {
             } else {
                 errorMsg = resp.error ?: "Gagal memuat"
             }
-        } catch (e: retrofit2.HttpException) {
-            val body = try { e.response()?.errorBody()?.string() ?: "" } catch (_: Exception) { "" }
-            errorMsg = "HTTP ${e.code()}: " + body.take(200)
         } catch (e: Exception) {
-            errorMsg = e.javaClass.simpleName + ": " + (e.message ?: "unknown")
+            errorMsg = "Koneksi gagal"
         }
         loading = false
     }
