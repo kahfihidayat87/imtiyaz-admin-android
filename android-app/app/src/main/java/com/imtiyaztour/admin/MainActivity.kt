@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
@@ -67,12 +68,18 @@ fun AdminApp() {
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
-                    label = { Text("Info", fontSize = 10.sp) }
+                    icon = { Icon(Icons.Default.Radio, contentDescription = null) },
+                    label = { Text("Kanal", fontSize = 10.sp) }
                 )
                 NavigationBarItem(
                     selected = selectedTab == 3,
                     onClick = { selectedTab = 3 },
+                    icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
+                    label = { Text("Info", fontSize = 10.sp) }
+                )
+                NavigationBarItem(
+                    selected = selectedTab == 4,
+                    onClick = { selectedTab = 4 },
                     icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                     label = { Text("Saya", fontSize = 10.sp) }
                 )
@@ -93,8 +100,9 @@ fun AdminApp() {
                         JamaahListScreen(onJamaahClick = { editingJamaah = it })
                     }
                 }
-                2 -> PengumumanScreen()
-                3 -> SayaScreen(onLoggedOut = {
+                2 -> KanalListScreen()
+                3 -> PengumumanScreen()
+                4 -> SayaScreen(onLoggedOut = {
                     isLoggedIn = false
                     selectedTab = 0
                 })

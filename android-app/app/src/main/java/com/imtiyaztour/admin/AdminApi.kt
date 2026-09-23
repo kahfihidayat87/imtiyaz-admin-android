@@ -35,6 +35,15 @@ interface AdminApiService {
 
     @POST("wp-json/imtiyaz/v1/admin-toggle-tl")
     suspend fun toggleTL(@Body body: Map<String, Any>): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-kanal")
+    suspend fun kanalList(@Body body: Map<String, String>): KanalListResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-kanal-save")
+    suspend fun kanalSave(@Body body: Map<String, String>): KanalSaveResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-kanal-delete")
+    suspend fun kanalDelete(@Body body: Map<String, String>): SimpleResponse
 }
 
 object AdminApiClient {
