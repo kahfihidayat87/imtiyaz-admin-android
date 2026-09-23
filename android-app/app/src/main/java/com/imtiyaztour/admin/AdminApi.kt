@@ -13,7 +13,7 @@ interface AdminApiService {
     suspend fun login(@Body body: AdminLoginRequest): AdminLoginResponse
 
     @POST("wp-json/imtiyaz/v1/admin-me")
-    suspend fun me(@Body body: Map<String, String>): Map<String, Any>?
+    suspend fun me(@Body body: Map<String, String>): Map<String, String>?
 
     @POST("wp-json/imtiyaz/v1/admin-logout")
     suspend fun logout(@Body body: Map<String, String>): Map<String, Boolean>?
@@ -22,19 +22,19 @@ interface AdminApiService {
     suspend fun dashboard(@Body body: Map<String, String>): DashboardResponse
 
     @POST("wp-json/imtiyaz/v1/admin-jamaah")
-    suspend fun jamaahList(@Body body: Map<String, Any>): JamaahListResponse
+    suspend fun jamaahList(@Body body: Map<String, String>): JamaahListResponse
 
     @POST("wp-json/imtiyaz/v1/admin-announcement")
-    suspend fun sendAnnouncement(@Body body: Map<String, Any>): AnnouncementResponse
+    suspend fun sendAnnouncement(@Body body: Map<String, String>): AnnouncementResponse
 
     @POST("wp-json/imtiyaz/v1/admin-jamaah-update")
-    suspend fun jamaahUpdate(@Body body: Map<String, Any>): SimpleResponse
+    suspend fun jamaahUpdate(@Body body: Map<String, String>): SimpleResponse
 
     @POST("wp-json/imtiyaz/v1/admin-checklist-update")
-    suspend fun checklistUpdate(@Body body: Map<String, Any>): SimpleResponse
+    suspend fun checklistUpdate(@Body body: Map<String, String>): SimpleResponse
 
     @POST("wp-json/imtiyaz/v1/admin-toggle-tl")
-    suspend fun toggleTL(@Body body: Map<String, Any>): SimpleResponse
+    suspend fun toggleTL(@Body body: Map<String, String>): SimpleResponse
 
     @POST("wp-json/imtiyaz/v1/admin-kanal")
     suspend fun kanalList(@Body body: Map<String, String>): KanalListResponse

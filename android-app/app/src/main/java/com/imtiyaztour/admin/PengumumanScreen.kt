@@ -115,7 +115,7 @@ fun PengumumanScreen() {
                                 "token" to token,
                                 "judul" to judul.trim(),
                                 "pesan" to pesan.trim(),
-                                "penting" to penting
+                                "penting" to (if (penting) "1" else "0")
                             ))
                         }
                         if (resp.success == true) {

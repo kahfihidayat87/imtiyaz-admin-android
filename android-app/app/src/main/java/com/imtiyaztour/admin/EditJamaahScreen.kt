@@ -92,19 +92,19 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
                         val r1 = withContext(Dispatchers.IO) {
                             AdminApiClient.service.jamaahUpdate(mapOf(
                                 "admin_id" to adminId, "token" to token,
-                                "jamaah_id" to jamaah.id,
+                                "jamaah_id" to jamaah.id.toString(),
                                 "nama" to nama,
                                 "paket_id" to paketId,
                                 "kanal_id" to kanalId,
-                                "total_tagihan" to (totalTagihan.toLongOrNull() ?: 0L),
-                                "sudah_dibayar" to (sudahDibayar.toLongOrNull() ?: 0L),
+                                "total_tagihan" to (totalTagihan.toLongOrNull() ?: 0L).toString(),
+                                "sudah_dibayar" to (sudahDibayar.toLongOrNull() ?: 0L).toString(),
                                 "status_pembayaran" to status
                             ))
                         }
                         withContext(Dispatchers.IO) {
                             AdminApiClient.service.toggleTL(mapOf(
                                 "admin_id" to adminId, "token" to token,
-                                "jamaah_id" to jamaah.id, "is_tour_leader" to isTL
+                                "jamaah_id" to jamaah.id.toString(), "is_tour_leader" to (if (isTL) "1" else "0")
                             ))
                         }
                         if (r1.success == true) {

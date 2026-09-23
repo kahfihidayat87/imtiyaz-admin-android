@@ -42,7 +42,7 @@ fun JamaahListScreen(onJamaahClick: (JamaahSummary) -> Unit = {}) {
                         "admin_id" to adminId,
                         "token" to token,
                         "search" to query,
-                        "per_page" to 100
+                        "per_page" to "100"
                     )
                 )
             }
