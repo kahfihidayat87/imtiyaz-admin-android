@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
@@ -66,12 +65,6 @@ fun AdminApp() {
                 NavigationBarItem(
                     selected = selectedTab == 2,
                     onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.Campaign, contentDescription = null) },
-                    label = { Text("Info", fontSize = 10.sp) }
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 3,
-                    onClick = { selectedTab = 3 },
                     icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                     label = { Text("Saya", fontSize = 10.sp) }
                 )
@@ -82,8 +75,7 @@ fun AdminApp() {
             when (selectedTab) {
                 0 -> DashboardScreen()
                 1 -> JamaahListScreen()
-                2 -> PengumumanScreen()
-                3 -> SayaScreen(onLoggedOut = {
+                2 -> SayaScreen(onLoggedOut = {
                     isLoggedIn = false
                     selectedTab = 0
                 })

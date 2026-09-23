@@ -23,9 +23,6 @@ interface AdminApiService {
 
     @POST("wp-json/imtiyaz/v1/admin-jamaah")
     suspend fun jamaahList(@Body body: Map<String, Any>): JamaahListResponse
-
-    @POST("wp-json/imtiyaz/v1/admin-announcement")
-    suspend fun sendAnnouncement(@Body body: Map<String, Any>): AnnouncementResponse
 }
 
 object AdminApiClient {

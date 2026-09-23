@@ -61,21 +61,3 @@ fun formatRupiah(v: Long): String {
     }
     return "Rp " + sb.reverse().toString()
 }
-
-
-// Response kirim pengumuman
-data class AnnouncementResponse(
-    val success: Boolean? = null,
-    val message: String? = null,
-    val item: AnnouncementItem? = null,
-    val error: String? = null
-)
-
-data class AnnouncementItem(
-    val id: String? = null,
-    val judul: String? = null,
-    val pesan: String? = null,
-    val tanggal: Long = 0L,
-    val penting: Boolean = false,
-    val dikirim_oleh: String? = null
-)
