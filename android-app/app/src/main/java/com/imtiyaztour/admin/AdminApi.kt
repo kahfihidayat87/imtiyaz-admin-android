@@ -26,6 +26,15 @@ interface AdminApiService {
 
     @POST("wp-json/imtiyaz/v1/admin-announcement")
     suspend fun sendAnnouncement(@Body body: Map<String, Any>): AnnouncementResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-jamaah-update")
+    suspend fun jamaahUpdate(@Body body: Map<String, Any>): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-checklist-update")
+    suspend fun checklistUpdate(@Body body: Map<String, Any>): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-toggle-tl")
+    suspend fun toggleTL(@Body body: Map<String, Any>): SimpleResponse
 }
 
 object AdminApiClient {

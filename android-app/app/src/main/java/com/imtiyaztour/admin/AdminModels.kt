@@ -79,3 +79,10 @@ data class AnnouncementItem(
     val penting: Boolean = false,
     val dikirim_oleh: String? = null
 )
+
+
+data class SimpleResponse(
+    val success: Boolean? = null,
+    val message: String? = null,
+    val error: String? = null
+)

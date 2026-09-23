@@ -1,6 +1,7 @@
 package com.imtiyaztour.admin
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Composable
-fun JamaahListScreen() {
+fun JamaahListScreen(onJamaahClick: (JamaahSummary) -> Unit = {}) {
     val context = LocalContext.current
     val adminId = Prefs.getAdminId(context)
     val token = Prefs.getToken(context)
@@ -88,7 +89,7 @@ fun JamaahListScreen() {
 
         LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(list) { j ->
-                JamaahCard(j)
+                JamaahCard(j, onClick = { onJamaahClick(j) })
             }
             if (!loading && list.isEmpty() && errorMsg.isEmpty()) {
                 item {
@@ -100,12 +101,12 @@ fun JamaahListScreen() {
 }
 
 @Composable
-private fun JamaahCard(j: JamaahSummary) {
+private fun JamaahCard(j: JamaahSummary, onClick: () -> Unit = {}) {
     Card(
         shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(1.dp),
-        modifier = Modifier.fillMaxWidth()
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {

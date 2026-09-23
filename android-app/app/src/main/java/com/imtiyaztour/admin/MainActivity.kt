@@ -31,6 +31,7 @@ fun AdminApp() {
     val context = LocalContext.current
     var isLoggedIn by remember { mutableStateOf(Prefs.isLoggedIn(context)) }
     var selectedTab by remember { mutableIntStateOf(0) }
+    var editingJamaah by remember { mutableStateOf<JamaahSummary?>(null) }
 
     if (!isLoggedIn) {
         LoginScreen(onLoggedIn = { isLoggedIn = true })
@@ -81,7 +82,17 @@ fun AdminApp() {
         Box(Modifier.padding(padding)) {
             when (selectedTab) {
                 0 -> DashboardScreen()
-                1 -> JamaahListScreen()
+                1 -> {
+                    if (editingJamaah != null) {
+                        EditJamaahScreen(
+                            jamaah = editingJamaah!!,
+                            onBack = { editingJamaah = null },
+                            onSaved = { editingJamaah = null }
+                        )
+                    } else {
+                        JamaahListScreen(onJamaahClick = { editingJamaah = it })
+                    }
+                }
                 2 -> PengumumanScreen()
                 3 -> SayaScreen(onLoggedOut = {
                     isLoggedIn = false
