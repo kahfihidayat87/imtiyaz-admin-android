@@ -45,6 +45,7 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
     var saving by remember { mutableStateOf(false) }
     var msg by remember { mutableStateOf("") }
     var msgError by remember { mutableStateOf(false) }
+    var showInvoice by remember { mutableStateOf(false) }
 
     LaunchedEffect(jamaah.id) {
         loadingDetail = true
@@ -67,6 +68,14 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
             // biarkan, tetap bisa edit basic
         }
         loadingDetail = false
+    }
+
+    if (showInvoice) {
+        InvoiceScreen(
+            jamaah = jamaah,
+            onBack = { showInvoice = false }
+        )
+        return
     }
 
     Column(
@@ -294,6 +303,21 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
             Text(msg,
                 color = if (msgError) AdminDanger else AdminSuccess,
                 fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        }
+
+        // ==== GENERATE INVOICE ====
+        Spacer(Modifier.height(24.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(16.dp))
+        Text("Invoice", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AdminPrimary)
+        Text("Buat invoice PDF untuk jamaah ini", fontSize = 11.sp, color = AdminTextGray)
+        Spacer(Modifier.height(8.dp))
+        OutlinedButton(
+            onClick = { showInvoice = true },
+            modifier = Modifier.fillMaxWidth().height(48.dp),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text("GENERATE INVOICE", fontWeight = FontWeight.Bold, color = AdminPrimary)
         }
     }
 }
