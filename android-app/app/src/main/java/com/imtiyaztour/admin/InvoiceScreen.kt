@@ -23,9 +23,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // ============================================================================
-// [INVOICE] v1.0 — Form generate invoice PDF
-// Alur: Admin isi form -> klik Generate -> API panggil Node.js -> PDF dibuat
-// -> URL PDF dibuka di browser (via Intent.ACTION_VIEW)
+// [INVOICE] v1.1 — Form generate invoice PDF (dengan tombol SIMPAN dulu)
+// Alur: Admin isi NILAI TAGIHAN -> klik SIMPAN (update ke WP) -> tombol
+// GENERATE aktif -> klik GENERATE -> PDF dibuat -> buka di browser.
+// Rumus: sisa = max(0, total_tagihan - sum(paymentHistory))
 // ============================================================================
 
 private val DEFAULT_FASILITAS = listOf(
@@ -55,41 +56,63 @@ private val DEFAULT_EXCLUDED = listOf(
 fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val adminId = Prefs.getAdminId(context)
+    val token = Prefs.getToken(context)
 
-    // Form state
+    // ============ IDENTITAS ============
     var invoiceNumber by remember {
         mutableStateOf("INV-${jamaah.id}-${System.currentTimeMillis() / 1000}")
     }
     var billTo by remember { mutableStateOf(jamaah.nama) }
-    var keberangkatan by remember { mutableStateOf("") }
-    var hotelMadinah by remember { mutableStateOf("") }
-    var hotelMakkah by remember { mutableStateOf("") }
+
+    // ============ NILAI TAGIHAN (bagian utama) ============
     var totalTagihan by remember {
         mutableStateOf(if (jamaah.total_tagihan > 0) jamaah.total_tagihan.toString() else "0")
     }
-    var amountDue by remember {
-        mutableStateOf(if (jamaah.sisa_tagihan > 0) jamaah.sisa_tagihan.toString() else "0")
+    val paymentHistory = remember {
+        mutableStateListOf<Long>().apply {
+            if (jamaah.sudah_dibayar > 0) add(jamaah.sudah_dibayar)
+        }
     }
+    val totalSudah = paymentHistory.sum()
+    val totalTagihanLong = totalTagihan.toLongOrNull() ?: 0L
+    val sisaTagihan = totalTagihanLong - totalSudah
+    val sisaTagihanClamped = if (sisaTagihan < 0) 0L else sisaTagihan
+
+    // ============ DETAIL PERJALANAN ============
+    var keberangkatan by remember { mutableStateOf("") }
+    var hotelMadinah by remember { mutableStateOf("") }
+    var hotelMakkah by remember { mutableStateOf("") }
+
+    // ============ ITEMS (auto-fill dari total) ============
+    val items = remember {
+        mutableStateListOf(InvoiceItem("Paket Umrah", 1, jamaah.total_tagihan))
+    }
+    // Sync item pertama dengan totalTagihan
+    LaunchedEffect(totalTagihan) {
+        if (items.isNotEmpty()) {
+            items[0] = items[0].copy(quantity = 1, price = totalTagihanLong)
+        }
+    }
+
+    // ============ FASILITAS ============
     var fasilitasText by remember { mutableStateOf(DEFAULT_FASILITAS.joinToString("\n")) }
     var excludedText by remember { mutableStateOf(DEFAULT_EXCLUDED.joinToString("\n")) }
 
-    // Items & Payments
-    val items = remember {
-        mutableStateListOf(
-            InvoiceItem(
-                description = "Paket Umrah",
-                quantity = 1,
-                price = jamaah.total_tagihan
-            )
-        )
-    }
-    val payments = remember { mutableStateListOf<InvoicePayment>() }
-
-    // Result state
+    // ============ STATE SIMPAN / GENERATE ============
+    var savedSnapshot by remember { mutableStateOf<Pair<Long, Long>?>(null) }
     var saving by remember { mutableStateOf(false) }
-    var resultMsg by remember { mutableStateOf("") }
+    var saveMsg by remember { mutableStateOf("") }
+    var saveMsgError by remember { mutableStateOf(false) }
+
+    var generating by remember { mutableStateOf(false) }
+    var generateMsg by remember { mutableStateOf("") }
+    var generateMsgError by remember { mutableStateOf(false) }
     var resultUrl by remember { mutableStateOf("") }
-    var isError by remember { mutableStateOf(false) }
+
+    val currentSnapshot = totalTagihanLong to totalSudah
+    val hasUnsavedChanges = savedSnapshot == null || savedSnapshot != currentSnapshot
+    val canGenerate = !hasUnsavedChanges && savedSnapshot != null
 
     Column(
         Modifier
@@ -112,8 +135,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
         ) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Jamaah", fontWeight = FontWeight.Bold, color = AdminPrimary)
-                Text("ID: ${jamaah.id}", fontSize = 12.sp, color = Color.Gray)
-
+                Text("ID: ${jamaah.id}  •  Nama: ${jamaah.nama}", fontSize = 12.sp, color = Color.Gray)
                 OutlinedTextField(
                     value = invoiceNumber,
                     onValueChange = { invoiceNumber = it },
@@ -124,14 +146,149 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                 OutlinedTextField(
                     value = billTo,
                     onValueChange = { billTo = it },
-                    label = { Text("BILL TO (nama penerima invoice)") },
+                    label = { Text("BILL TO") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
             }
         }
 
-        // ============ DETAIL TRIP ============
+        // ============ NILAI TAGIHAN (PALING ATAS) ============
+        Card(
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3CD)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("NILAI TAGIHAN", fontWeight = FontWeight.Bold, color = AdminPrimary, fontSize = 15.sp)
+
+                OutlinedTextField(
+                    value = totalTagihan,
+                    onValueChange = { totalTagihan = it.filter { c -> c.isDigit() } },
+                    label = { Text("Total Tagihan (Rp)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
+
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Riwayat Pembayaran", fontWeight = FontWeight.Bold, color = AdminPrimary, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { paymentHistory.add(0L) }) {
+                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Tambah", fontSize = 12.sp)
+                    }
+                }
+
+                if (paymentHistory.isEmpty()) {
+                    Text("Belum ada pembayaran.", fontSize = 11.sp, color = Color.Gray)
+                }
+                paymentHistory.forEachIndexed { idx, amount ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = if (amount == 0L) "" else amount.toString(),
+                            onValueChange = {
+                                val a = it.filter { c -> c.isDigit() }.toLongOrNull() ?: 0L
+                                paymentHistory[idx] = a
+                            },
+                            label = { Text("Jumlah (Rp)") },
+                            placeholder = { Text("0", fontSize = 12.sp) },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        IconButton(onClick = { paymentHistory.removeAt(idx) }) {
+                            Icon(Icons.Default.Delete, "Hapus", tint = AdminDanger)
+                        }
+                    }
+                }
+
+                HorizontalDivider(Modifier.padding(vertical = 6.dp))
+
+                Row(Modifier.fillMaxWidth()) {
+                    Text("Total Sudah Dibayar", fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    Text(formatRupiah(totalSudah), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+                Row(Modifier.fillMaxWidth()) {
+                    Text("Sisa Tagihan (Auto)", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AdminPrimary, modifier = Modifier.weight(1f))
+                    Text(
+                        formatRupiah(sisaTagihanClamped),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (sisaTagihanClamped <= 0) AdminSuccess else AdminDanger
+                    )
+                }
+                if (sisaTagihan < 0) {
+                    Text("⚠ Pembayaran melebihi tagihan. Sisa dikunci ke Rp 0.", fontSize = 10.sp, color = AdminDanger)
+                }
+                Text("Rumus: Sisa = Total - Total Sudah Dibayar", fontSize = 10.sp, color = Color.Gray)
+            }
+        }
+
+        // ============ TOMBOL SIMPAN (WAJIB DULU) ============
+        Button(
+            onClick = {
+                if (totalTagihanLong <= 0) {
+                    saveMsg = "Total tagihan wajib > 0"
+                    saveMsgError = true
+                    return@Button
+                }
+                saving = true
+                saveMsg = ""
+                saveMsgError = false
+                scope.launch {
+                    try {
+                        val resp = withContext(Dispatchers.IO) {
+                            AdminApiClient.service.jamaahUpdate(mapOf(
+                                "admin_id" to adminId,
+                                "token" to token,
+                                "jamaah_id" to jamaah.id.toString(),
+                                "total_tagihan" to totalTagihanLong.toString(),
+                                "sudah_dibayar" to totalSudah.toString()
+                            ))
+                        }
+                        if (resp.success == true) {
+                            savedSnapshot = currentSnapshot
+                            saveMsg = "Tersimpan. Sekarang bisa generate invoice."
+                            saveMsgError = false
+                        } else {
+                            saveMsg = resp.error ?: "Gagal simpan"
+                            saveMsgError = true
+                        }
+                    } catch (e: Exception) {
+                        saveMsg = "Error: ${e.message}"
+                        saveMsgError = true
+                    }
+                    saving = false
+                }
+            },
+            enabled = !saving,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = AdminPrimary),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            if (saving) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+            else Text("SIMPAN NILAI TAGIHAN", fontWeight = FontWeight.Bold)
+        }
+        if (saveMsg.isNotEmpty()) {
+            Text(saveMsg, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                color = if (saveMsgError) AdminDanger else AdminSuccess)
+        }
+        if (hasUnsavedChanges && savedSnapshot != null) {
+            Text("⚠ Ada perubahan belum disimpan. Klik SIMPAN lagi.", fontSize = 11.sp, color = AdminDanger)
+        }
+
+        HorizontalDivider()
+
+        // ============ DETAIL PERJALANAN ============
         Card(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -142,7 +299,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                 OutlinedTextField(
                     value = keberangkatan,
                     onValueChange = { keberangkatan = it },
-                    label = { Text("Tanggal Keberangkatan (mis. 29 Maret 2026)") },
+                    label = { Text("Tanggal Keberangkatan") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -163,31 +320,6 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
             }
         }
 
-        // ============ NILAI TAGIHAN ============
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Nilai Tagihan", fontWeight = FontWeight.Bold, color = AdminPrimary)
-                OutlinedTextField(
-                    value = totalTagihan,
-                    onValueChange = { totalTagihan = it.filter { c -> c.isDigit() } },
-                    label = { Text("Total Tagihan (Rp)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = amountDue,
-                    onValueChange = { amountDue = it.filter { c -> c.isDigit() } },
-                    label = { Text("Sisa Tagihan / Amount Due (Rp)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-        }
-
         // ============ ITEMS ============
         Card(
             shape = RoundedCornerShape(12.dp),
@@ -197,9 +329,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Items", fontWeight = FontWeight.Bold, color = AdminPrimary, modifier = Modifier.weight(1f))
-                    TextButton(onClick = {
-                        items.add(InvoiceItem("", 1, 0))
-                    }) {
+                    TextButton(onClick = { items.add(InvoiceItem("", 1, 0)) }) {
                         Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("Tambah", fontSize = 12.sp)
@@ -242,7 +372,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                             Icon(Icons.Default.Delete, "Hapus", tint = AdminDanger)
                         }
                     }
-                    Divider(Modifier.padding(vertical = 4.dp))
+                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
                 }
             }
         }
@@ -269,73 +399,24 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
             }
         }
 
-        // ============ PAYMENT HISTORY ============
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Riwayat Pembayaran", fontWeight = FontWeight.Bold, color = AdminPrimary, modifier = Modifier.weight(1f))
-                    TextButton(onClick = {
-                        payments.add(InvoicePayment(System.currentTimeMillis(), 0L, "bank"))
-                    }) {
-                        Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("Tambah", fontSize = 12.sp)
-                    }
-                }
-                if (payments.isEmpty()) {
-                    Text("Belum ada pembayaran dicatat (opsional).", fontSize = 11.sp, color = Color.Gray)
-                }
-                payments.forEachIndexed { idx, p ->
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(
-                            value = p.amount.toString(),
-                            onValueChange = {
-                                val a = it.filter { c -> c.isDigit() }.toLongOrNull() ?: 0L
-                                payments[idx] = p.copy(amount = a)
-                            },
-                            label = { Text("Jumlah (Rp)") },
-                            modifier = Modifier.weight(1f),
-                            singleLine = true
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        IconButton(onClick = { payments.removeAt(idx) }) {
-                            Icon(Icons.Default.Delete, "Hapus", tint = AdminDanger)
-                        }
-                    }
-                }
-            }
-        }
-
-        // ============ TOMBOL GENERATE ============
+        // ============ TOMBOL GENERATE (hanya aktif setelah SIMPAN) ============
         Button(
             onClick = {
-                if (invoiceNumber.isBlank()) {
-                    resultMsg = "Nomor invoice wajib diisi"
-                    isError = true
-                    return@Button
-                }
-                if (billTo.isBlank()) {
-                    resultMsg = "BILL TO wajib diisi"
-                    isError = true
-                    return@Button
-                }
-                if (items.isEmpty() || items.any { it.description.isBlank() }) {
-                    resultMsg = "Minimal 1 item dengan deskripsi"
-                    isError = true
-                    return@Button
-                }
-
-                saving = true
-                resultMsg = ""
+                generating = true
+                generateMsg = ""
+                generateMsgError = false
                 resultUrl = ""
-                isError = false
-
                 scope.launch {
                     try {
+                        val paymentsList = paymentHistory
+                            .filter { it > 0 }
+                            .mapIndexed { _, amount ->
+                                InvoicePayment(
+                                    date = System.currentTimeMillis(),
+                                    amount = amount,
+                                    method = "bank"
+                                )
+                            }
                         val req = InvoiceRequest(
                             jamaah_id = jamaah.id.toString(),
                             invoice_number = invoiceNumber.trim(),
@@ -343,60 +424,58 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                             invoice_date = System.currentTimeMillis(),
                             payment_due = System.currentTimeMillis(),
                             items = items.toList(),
-                            total = totalTagihan.toLongOrNull() ?: 0L,
-                            amount_due = amountDue.toLongOrNull() ?: 0L,
+                            total = totalTagihanLong,
+                            amount_due = sisaTagihanClamped,
                             keberangkatan = keberangkatan.ifBlank { null },
                             hotel_madinah = hotelMadinah.ifBlank { null },
                             hotel_makkah = hotelMakkah.ifBlank { null },
                             fasilitas = fasilitasText.lines().map { it.trim() }.filter { it.isNotBlank() },
                             fasilitas_excluded = excludedText.lines().map { it.trim() }.filter { it.isNotBlank() },
-                            payments = payments.toList()
+                            payments = paymentsList
                         )
                         val resp = withContext(Dispatchers.IO) {
                             InvoiceApiClient.service.generateInvoice(ApiConfig.INVOICE_API_KEY, req)
                         }
                         if (resp.success == true && !resp.pdf_url.isNullOrBlank()) {
                             resultUrl = resp.pdf_url
-                            resultMsg = "Invoice berhasil dibuat!"
-                            isError = false
+                            generateMsg = "Invoice berhasil dibuat!"
+                            generateMsgError = false
                         } else {
-                            resultMsg = resp.error ?: "Gagal generate invoice"
-                            isError = true
+                            generateMsg = resp.error ?: "Gagal generate invoice"
+                            generateMsgError = true
                         }
                     } catch (e: Exception) {
-                        resultMsg = "Error: ${e.message}"
-                        isError = true
+                        generateMsg = "Error: ${e.message}"
+                        generateMsgError = true
                     }
-                    saving = false
+                    generating = false
                 }
             },
-            enabled = !saving,
+            enabled = canGenerate && !generating,
             modifier = Modifier.fillMaxWidth().height(52.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AdminPrimary),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (canGenerate) AdminSuccess else Color.Gray
+            ),
             shape = RoundedCornerShape(10.dp)
         ) {
-            if (saving) {
-                CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
-            } else {
-                Text("GENERATE INVOICE", fontWeight = FontWeight.Bold)
-            }
+            if (generating) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+            else Text(
+                if (canGenerate) "GENERATE INVOICE" else "SIMPAN DULU SEBELUM GENERATE",
+                fontWeight = FontWeight.Bold
+            )
         }
 
         // ============ HASIL ============
-        if (resultMsg.isNotEmpty()) {
+        if (generateMsg.isNotEmpty()) {
             Card(
                 shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isError) Color(0xFFFEE2E2) else Color(0xFFD1FAE5)
+                    containerColor = if (generateMsgError) Color(0xFFFEE2E2) else Color(0xFFD1FAE5)
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        resultMsg,
-                        color = if (isError) AdminDanger else AdminSuccess,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(generateMsg, color = if (generateMsgError) AdminDanger else AdminSuccess, fontWeight = FontWeight.Bold)
                     if (resultUrl.isNotBlank()) {
                         Button(
                             onClick = {
