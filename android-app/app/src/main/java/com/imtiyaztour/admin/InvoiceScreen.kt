@@ -211,7 +211,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                     }
                 }
 
-                HorizontalDivider(Modifier.padding(vertical = 6.dp))
+                Divider(Modifier.padding(vertical = 6.dp))
 
                 Row(Modifier.fillMaxWidth()) {
                     Text("Total Sudah Dibayar", fontSize = 13.sp, modifier = Modifier.weight(1f))
@@ -286,7 +286,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
             Text("⚠ Ada perubahan belum disimpan. Klik SIMPAN lagi.", fontSize = 11.sp, color = AdminDanger)
         }
 
-        HorizontalDivider()
+        Divider()
 
         // ============ DETAIL PERJALANAN ============
         Card(
@@ -372,7 +372,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                             Icon(Icons.Default.Delete, "Hapus", tint = AdminDanger)
                         }
                     }
-                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                    Divider(Modifier.padding(vertical = 4.dp))
                 }
             }
         }
