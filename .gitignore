@@ -12,3 +12,11 @@ android-app/local.properties
 # IDE
 .idea/
 *.iml
+
+# Patch scripts & backup (tidak disimpan di repo)
+patch-*.py
+*.bak-*
+
+# Patch scripts & backup
+patch-*.py
+*.bak-*
