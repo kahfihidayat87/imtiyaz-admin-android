@@ -307,7 +307,7 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
 
         // ==== GENERATE INVOICE ====
         Spacer(Modifier.height(24.dp))
-        HorizontalDivider()
+        Divider()
         Spacer(Modifier.height(16.dp))
         Text("Invoice", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AdminPrimary)
         Text("Buat invoice PDF untuk jamaah ini", fontSize = 11.sp, color = AdminTextGray)

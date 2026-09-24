@@ -242,7 +242,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                             Icon(Icons.Default.Delete, "Hapus", tint = AdminDanger)
                         }
                     }
-                    HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                    Divider(Modifier.padding(vertical = 4.dp))
                 }
             }
         }

@@ -24,3 +24,8 @@ patch-*.py
 # Patch scripts & backup
 patch-*.py
 *.bak-*
+
+# Node.js (tidak dipakai di repo admin Android)
+node_modules/
+package.json
+package-lock.json
