@@ -9,5 +9,5 @@ object ApiConfig {
 
     // API key proteksi endpoint tulis Node.js (dari hPanel environment variable)
     // PENTING: setelah rotate di hPanel, update nilai ini + rebuild admin app
-    const val INVOICE_API_KEY = "IASDGENF394R6HH"
+    const val INVOICE_API_KEY = "I9JU23NF394R6HH"
 }
