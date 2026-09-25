@@ -245,3 +245,23 @@ data class AdminCreateResponse(
     val message: String? = null,
     val error: String? = null
 )
+
+// ============================================================================
+// [JAMAAH-CREATE] v1.0 — Model untuk tambah jamaah baru (admin/super_admin)
+// ============================================================================
+data class JamaahCreateRequest(
+    val admin_id: String,
+    val token: String,
+    val nama: String,
+    val username: String,
+    val password: String,
+    val total_tagihan: Int,
+    val sudah_dibayar: Int
+)
+
+data class JamaahCreateResponse(
+    val success: Boolean? = null,
+    val jamaah_id: Int? = null,
+    val message: String? = null,
+    val error: String? = null
+)

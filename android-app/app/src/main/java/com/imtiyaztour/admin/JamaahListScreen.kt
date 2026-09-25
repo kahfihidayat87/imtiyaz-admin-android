@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +23,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Composable
-fun JamaahListScreen(onJamaahClick: (JamaahSummary) -> Unit = {}) {
+fun JamaahListScreen(
+    onJamaahClick: (JamaahSummary) -> Unit = {},
+    canAdd: Boolean = false,
+    onAddClick: () -> Unit = {}
+) {
     val context = LocalContext.current
     val adminId = Prefs.getAdminId(context)
     val token = Prefs.getToken(context)
@@ -72,6 +77,19 @@ fun JamaahListScreen(onJamaahClick: (JamaahSummary) -> Unit = {}) {
         Text("Jamaah", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = AdminPrimary)
         Text("$total jamaah terdaftar", fontSize = 12.sp, color = AdminTextGray)
         Spacer(Modifier.height(12.dp))
+        if (canAdd) {
+            Button(
+                onClick = onAddClick,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminPrimary),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("TAMBAH JAMAAH BARU", fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(8.dp))
+        }
 
         OutlinedTextField(
             value = query,

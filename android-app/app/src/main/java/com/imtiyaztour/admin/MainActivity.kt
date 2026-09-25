@@ -41,6 +41,7 @@ fun AdminApp() {
     var isLoggedIn by remember { mutableStateOf(Prefs.isLoggedIn(context)) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var editingJamaah by remember { mutableStateOf<JamaahSummary?>(null) }
+    var showAddJamaah by remember { mutableStateOf(false) }
 
     if (!isLoggedIn) {
         LoginScreen(onLoggedIn = { isLoggedIn = true; selectedTab = 0 })
@@ -115,14 +116,21 @@ fun AdminApp() {
             when (currentTabKey) {
                 "dashboard" -> DashboardScreen()
                 "jamaah" -> {
-                    if (editingJamaah != null) {
-                        EditJamaahScreen(
+                    when {
+                        showAddJamaah -> AddJamaahScreen(
+                            onBack = { showAddJamaah = false },
+                            onSuccess = { showAddJamaah = false }
+                        )
+                        editingJamaah != null -> EditJamaahScreen(
                             jamaah = editingJamaah!!,
                             onBack = { editingJamaah = null },
                             onSaved = { editingJamaah = null }
                         )
-                    } else {
-                        JamaahListScreen(onJamaahClick = { editingJamaah = it })
+                        else -> JamaahListScreen(
+                            onJamaahClick = { editingJamaah = it },
+                            canAdd = (role == "admin" || role == "super_admin"),
+                            onAddClick = { showAddJamaah = true }
+                        )
                     }
                 }
                 "bukti" -> BuktiListScreen()

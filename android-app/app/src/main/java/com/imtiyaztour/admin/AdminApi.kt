@@ -30,6 +30,9 @@ interface AdminApiService {
     @POST("wp-json/imtiyaz/v1/admin-jamaah-update")
     suspend fun jamaahUpdate(@Body body: Map<String, String>): SimpleResponse
 
+    @POST("wp-json/imtiyaz/v1/admin-jamaah-create")
+    suspend fun jamaahCreate(@Body body: JamaahCreateRequest): JamaahCreateResponse
+
     @POST("wp-json/imtiyaz/v1/admin-checklist-update")
     suspend fun checklistUpdate(@Body body: ChecklistUpdateRequest): SimpleResponse
 
