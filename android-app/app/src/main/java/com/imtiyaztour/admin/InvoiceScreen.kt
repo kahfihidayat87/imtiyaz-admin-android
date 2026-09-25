@@ -30,25 +30,25 @@ import kotlinx.coroutines.withContext
 // ============================================================================
 
 private val DEFAULT_FASILITAS = listOf(
-    "Tiket pesawat internasional",
     "Visa umrah",
+    "Tiket pesawat internasional",
     "Hotel Madinah",
     "Hotel Makkah",
-    "Makan prasmanan 3x sehari",
+    "Makan prasmanan 3x",
     "Transportasi bus AC",
-    "Pembimbing sejak dari tanah air",
-    "Pendampingan 24 jam selama di tanah suci",
+    "Ziarah/city tour Madinah - Makkah",
+    "Pembimbing sejak dari Jogja",
+    "Pendampingan 24 jam",
+    "Perlengkapan umrah",
     "Handling bagasi",
-    "Asuransi perjalanan",
-    "Air zam-zam (jika diizinkan)",
-    "Perlengkapan umrah (koper, ihram/mukena, kain batik, id card)"
+    "Air Zamzam 5ltr"
 )
 
 private val DEFAULT_EXCLUDED = listOf(
     "Biaya pembuatan paspor",
-    "Pengeluaran di luar program",
+    "Biaya vaksin meningitis dan polio",
     "Kelebihan bagasi",
-    "Hotel transit di Jakarta (jika ada)"
+    "Pengeluaran pribadi di luar program: laundry, pulsa, dll."
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -146,8 +146,27 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                 (d["hotel_madinah"] as? String)?.let { hotelMadinah = it }
                 @Suppress("UNCHECKED_CAST")
                 (d["hotel_makkah"] as? String)?.let { hotelMakkah = it }
-                (d["fasilitas_text"] as? String)?.let { fasilitasText = it }
-                (d["excluded_text"] as? String)?.let { excludedText = it }
+                // Load fasilitas — prefer array, fallback string lama
+                val fasList = d["fasilitas"] as? List<*>
+                if (!fasList.isNullOrEmpty()) {
+                    fasilitasText = fasList.mapNotNull { it?.toString()?.takeIf { s -> s.isNotBlank() } }.joinToString("\n")
+                } else {
+                    // Backward compat: parse string lama, fix \n yang rusak
+                    (d["fasilitas_text"] as? String)?.let { raw ->
+                        fasilitasText = raw
+                            .replace("\\n", "\n")   // \n jadi newline
+                            .replace(Regex("(?<=[a-z0-9])(?=[A-Z])"), "\n") // pecah CamelCase (kalau ada)
+                    }
+                }
+
+                val excList = d["excluded"] as? List<*>
+                if (!excList.isNullOrEmpty()) {
+                    excludedText = excList.mapNotNull { it?.toString()?.takeIf { s -> s.isNotBlank() } }.joinToString("\n")
+                } else {
+                    (d["excluded_text"] as? String)?.let { raw ->
+                        excludedText = raw.replace("\\n", "\n")
+                    }
+                }
 
                 @Suppress("UNCHECKED_CAST")
                 val itemsList = d["items"] as? List<Map<String, Any>>
@@ -488,6 +507,9 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                             "keberangkatan" to keberangkatan.trim(),
                             "hotel_madinah" to hotelMadinah.trim(),
                             "hotel_makkah" to hotelMakkah.trim(),
+                            "fasilitas" to fasilitasText.lines().map { it.trim() }.filter { it.isNotBlank() },
+                            "excluded" to excludedText.lines().map { it.trim() }.filter { it.isNotBlank() },
+                            // Backward compat — tetap simpan versi string juga
                             "fasilitas_text" to fasilitasText,
                             "excluded_text" to excludedText,
                             "items" to itemsList,
