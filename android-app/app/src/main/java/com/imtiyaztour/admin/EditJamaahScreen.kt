@@ -100,12 +100,8 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
 
                 OutlinedTextField(nama, { nama = it }, label = { Text("Nama") },
                     modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), singleLine = true)
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(paketId, { paketId = it }, label = { Text("Paket ID") },
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), singleLine = true)
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(kanalId, { kanalId = it }, label = { Text("Kanal Radio ID") },
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), singleLine = true)
+                // Paket ID & Kanal Radio ID disembunyikan -- edit hanya via WP Admin.
+                // Nilai tetap di-load dari server & dikirim balik saat save (tidak ditimpa).
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(totalTagihan, { totalTagihan = it.filter { c -> c.isDigit() } },
                     label = { Text("Total Tagihan") },
