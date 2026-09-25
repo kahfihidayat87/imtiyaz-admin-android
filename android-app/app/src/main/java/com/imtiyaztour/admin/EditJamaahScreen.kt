@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,7 +23,13 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> Unit) {
+fun EditJamaahScreen(
+    jamaah: JamaahSummary,
+    onBack: () -> Unit,
+    onSaved: () -> Unit,
+    canDelete: Boolean = false,
+    onDeleted: () -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val adminId = Prefs.getAdminId(context)
@@ -46,6 +53,10 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
     var msg by remember { mutableStateOf("") }
     var msgError by remember { mutableStateOf(false) }
     var showInvoice by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteConfirmText by remember { mutableStateOf("") }
+    var deleting by remember { mutableStateOf(false) }
+    var deleteMsg by remember { mutableStateOf("") }
 
     LaunchedEffect(jamaah.id) {
         loadingDetail = true
@@ -315,5 +326,92 @@ fun EditJamaahScreen(jamaah: JamaahSummary, onBack: () -> Unit, onSaved: () -> U
         ) {
             Text("GENERATE INVOICE", fontWeight = FontWeight.Bold, color = AdminPrimary)
         }
+
+        // ==== HAPUS JAMAAH (hanya super_admin) ====
+        if (canDelete) {
+            Spacer(Modifier.height(24.dp))
+            Divider()
+            Spacer(Modifier.height(16.dp))
+            Text("Zona Berbahaya", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AdminDanger)
+            Text("Aksi di bawah ini TIDAK BISA dibatalkan", fontSize = 11.sp, color = AdminTextGray)
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { showDeleteDialog = true; deleteConfirmText = ""; deleteMsg = "" },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AdminDanger),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("HAPUS JAMAAH PERMANEN", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+
+    // ==== Dialog konfirmasi hapus ====
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!deleting) showDeleteDialog = false },
+            title = { Text("HAPUS JAMAAH?", fontWeight = FontWeight.Bold, color = AdminDanger) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Nama: " + jamaah.nama, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text("ID: " + jamaah.id, fontSize = 11.sp, color = AdminTextGray)
+                    Text("Tagihan: " + formatRupiah(jamaah.total_tagihan), fontSize = 11.sp, color = AdminTextGray)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Data berikut akan HILANG PERMANEN:",
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AdminDanger)
+                    Text("- Profil & login jamaah", fontSize = 11.sp)
+                    Text("- Riwayat pembayaran", fontSize = 11.sp)
+                    Text("- Checklist dokumen", fontSize = 11.sp)
+                    Spacer(Modifier.height(6.dp))
+                    Text("Ketik HAPUS untuk konfirmasi:", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = deleteConfirmText,
+                        onValueChange = { deleteConfirmText = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        placeholder = { Text("HAPUS") }
+                    )
+                    if (deleteMsg.isNotEmpty()) Text(deleteMsg, fontSize = 11.sp, color = AdminDanger)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        deleting = true; deleteMsg = ""
+                        scope.launch {
+                            try {
+                                val resp = withContext(Dispatchers.IO) {
+                                    AdminApiClient.service.jamaahDelete(mapOf(
+                                        "admin_id" to adminId,
+                                        "token" to token,
+                                        "jamaah_id" to jamaah.id.toString()
+                                    ))
+                                }
+                                if (resp.success == true) {
+                                    showDeleteDialog = false
+                                    onDeleted()
+                                } else {
+                                    deleteMsg = resp.error ?: "Gagal hapus"
+                                }
+                            } catch (e: Exception) {
+                                deleteMsg = "Error: " + (e.message ?: "")
+                            }
+                            deleting = false
+                        }
+                    },
+                    enabled = !deleting && deleteConfirmText.trim().uppercase() == "HAPUS"
+                ) {
+                    if (deleting) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = AdminDanger)
+                    else Text("HAPUS PERMANEN", color = AdminDanger, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { if (!deleting) showDeleteDialog = false }, enabled = !deleting) {
+                    Text("BATAL")
+                }
+            }
+        )
     }
 }

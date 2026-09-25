@@ -124,7 +124,9 @@ fun AdminApp() {
                         editingJamaah != null -> EditJamaahScreen(
                             jamaah = editingJamaah!!,
                             onBack = { editingJamaah = null },
-                            onSaved = { editingJamaah = null }
+                            onSaved = { editingJamaah = null },
+                            canDelete = (role == "super_admin"),
+                            onDeleted = { editingJamaah = null }
                         )
                         else -> JamaahListScreen(
                             onJamaahClick = { editingJamaah = it },
