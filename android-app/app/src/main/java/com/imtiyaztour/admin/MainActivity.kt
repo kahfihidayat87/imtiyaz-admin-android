@@ -57,7 +57,7 @@ fun AdminApp() {
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
-            AdminTab("admin", "Admin", Icons.Default.Settings),
+            AdminTab("admin", "Admin", Icons.Default.Person),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
         "keuangan" -> listOf(
