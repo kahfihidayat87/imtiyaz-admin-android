@@ -206,3 +206,42 @@ data class InvoiceListItem(
     val total: Long = 0L,
     val pdf_url: String? = null
 )
+
+// ============================================================================
+// [SUPER-ADMIN] v1.0 — Model untuk kelola akun admin
+// ============================================================================
+data class AdminItem(
+    val id: Int = 0,
+    val username: String = "",
+    val nama: String? = null,
+    val role: String = "admin",
+    val kanal_id: String? = null,
+    val last_login: Long = 0L,
+    val is_active: Int = 1,
+    val created_at: Long = 0L
+)
+
+data class AdminListResponse(
+    val success: Boolean? = null,
+    val total: Int = 0,
+    val admins: List<AdminItem> = emptyList(),
+    val me_id: Int = 0,
+    val error: String? = null
+)
+
+data class AdminCreateRequest(
+    val admin_id: String,
+    val token: String,
+    val username: String,
+    val password: String,
+    val nama: String,
+    val role: String,
+    val kanal_id: String
+)
+
+data class AdminCreateResponse(
+    val success: Boolean? = null,
+    val admin_id: Int? = null,
+    val message: String? = null,
+    val error: String? = null
+)

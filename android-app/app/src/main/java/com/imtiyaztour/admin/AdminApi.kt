@@ -60,6 +60,22 @@ interface AdminApiService {
 
     @POST("wp-json/imtiyaz/v1/admin-bukti-reject")
     suspend fun buktiReject(@Body body: Map<String, String>): SimpleResponse
+
+    // ===== SUPER-ADMIN =====
+    @POST("wp-json/imtiyaz/v1/admin-list")
+    suspend fun adminList(@Body body: Map<String, String>): AdminListResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-create")
+    suspend fun adminCreate(@Body body: AdminCreateRequest): AdminCreateResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-delete")
+    suspend fun adminDelete(@Body body: Map<String, String>): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-update-role")
+    suspend fun adminUpdateRole(@Body body: Map<String, String>): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-reset-password")
+    suspend fun adminResetPassword(@Body body: Map<String, String>): SimpleResponse
 }
 
 object AdminApiClient {

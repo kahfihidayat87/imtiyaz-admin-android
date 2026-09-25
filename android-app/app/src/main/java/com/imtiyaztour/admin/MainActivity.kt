@@ -51,6 +51,15 @@ fun AdminApp() {
 
     // Tab berbeda per role (RBAC)
     val tabs: List<AdminTab> = when (role) {
+        "super_admin" -> listOf(
+            AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
+            AdminTab("jamaah", "Jamaah", Icons.Default.People),
+            AdminTab("bukti", "Bukti", Icons.Default.Payments),
+            AdminTab("kanal", "Kanal", Icons.Default.Radio),
+            AdminTab("info", "Info", Icons.Default.Campaign),
+            AdminTab("admin", "Admin", Icons.Default.Settings),
+            AdminTab("saya", "Saya", Icons.Default.AccountCircle)
+        )
         "keuangan" -> listOf(
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
@@ -118,6 +127,7 @@ fun AdminApp() {
                 "bukti" -> BuktiListScreen()
                 "kanal" -> KanalListScreen()
                 "info" -> PengumumanScreen()
+                "admin" -> AdminListScreen()
                 "saya" -> SayaScreen(onLoggedOut = {
                     isLoggedIn = false
                     selectedTab = 0
