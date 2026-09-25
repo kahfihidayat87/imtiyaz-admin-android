@@ -88,11 +88,76 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
     val items = remember {
         mutableStateListOf(InvoiceItem("Paket Umrah", 1, jamaah.total_tagihan))
     }
+    // State untuk simpan & load detail paket (HARUS sebelum LaunchedEffect yang pakai)
+    var initialLoading by remember { mutableStateOf(true) }
+    var invoiceDataSaved by remember { mutableStateOf(false) }
+    var savingDetail by remember { mutableStateOf(false) }
+    var saveDetailMsg by remember { mutableStateOf("") }
+    var saveDetailError by remember { mutableStateOf(false) }
+
     // Sync item pertama dengan totalTagihan
-    LaunchedEffect(totalTagihan) {
-        if (items.isNotEmpty()) {
+    // (hanya kalau data invoice BELUM di-load dari server)
+    LaunchedEffect(totalTagihan, invoiceDataSaved) {
+        if (!invoiceDataSaved && items.isNotEmpty()) {
             items[0] = items[0].copy(quantity = 1, price = totalTagihanLong)
         }
+    }
+
+    // Load _invoice_data dari WP saat buka screen
+    LaunchedEffect(Unit) {
+        initialLoading = true
+        try {
+            val resp = withContext(Dispatchers.IO) {
+                AdminApiClient.service.invoiceDataGet(mapOf(
+                    "admin_id" to adminId,
+                    "token" to token,
+                    "jamaah_id" to jamaah.id.toString()
+                ))
+            }
+            if (resp.success == true && resp.has_data == true) {
+                val d = resp.invoice_data ?: emptyMap<String, Any>()
+                @Suppress("UNCHECKED_CAST")
+                (d["invoice_number"] as? String)?.let { invoiceNumber = it }
+                @Suppress("UNCHECKED_CAST")
+                (d["bill_to"] as? String)?.let { billTo = it }
+                @Suppress("UNCHECKED_CAST")
+                (d["keberangkatan"] as? String)?.let { keberangkatan = it }
+                @Suppress("UNCHECKED_CAST")
+                (d["hotel_madinah"] as? String)?.let { hotelMadinah = it }
+                @Suppress("UNCHECKED_CAST")
+                (d["hotel_makkah"] as? String)?.let { hotelMakkah = it }
+                (d["fasilitas_text"] as? String)?.let { fasilitasText = it }
+                (d["excluded_text"] as? String)?.let { excludedText = it }
+
+                @Suppress("UNCHECKED_CAST")
+                val itemsList = d["items"] as? List<Map<String, Any>>
+                if (!itemsList.isNullOrEmpty()) {
+                    items.clear()
+                    itemsList.forEach { m ->
+                        val desc = (m["description"] as? String) ?: ""
+                        val qty = (m["quantity"] as? Number)?.toInt() ?: 1
+                        val price = (m["price"] as? Number)?.toLong() ?: 0L
+                        items.add(InvoiceItem(desc, qty, price))
+                    }
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                val payments = d["payments"] as? List<Map<String, Any>>
+                if (!payments.isNullOrEmpty()) {
+                    paymentHistory.clear()
+                    payments.forEach { m ->
+                        val amt = (m["amount"] as? Number)?.toLong() ?: 0L
+                        if (amt > 0) paymentHistory.add(amt)
+                    }
+                }
+
+                invoiceDataSaved = true
+                savedSnapshot = totalTagihanLong to paymentHistory.sum()
+            }
+        } catch (e: Exception) {
+            // Abaikan — user isi manual
+        }
+        initialLoading = false
     }
 
     // ============ FASILITAS ============
@@ -112,7 +177,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
 
     val currentSnapshot = totalTagihanLong to totalSudah
     val hasUnsavedChanges = savedSnapshot == null || savedSnapshot != currentSnapshot
-    val canGenerate = !hasUnsavedChanges && savedSnapshot != null
+    val canGenerate = !hasUnsavedChanges && savedSnapshot != null && invoiceDataSaved && !initialLoading
 
     Column(
         Modifier
@@ -399,7 +464,81 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
             }
         }
 
-        // ============ TOMBOL GENERATE (hanya aktif setelah SIMPAN) ============
+        // ============ TOMBOL SIMPAN DETAIL PAKET ============
+        Button(
+            onClick = {
+                savingDetail = true
+                saveDetailMsg = ""
+                saveDetailError = false
+                scope.launch {
+                    try {
+                        val paymentsList = paymentHistory
+                            .filter { it > 0 }
+                            .map { InvoicePayment(System.currentTimeMillis(), it, "bank") }
+                        val itemsList = items.map {
+                            mapOf("description" to it.description, "quantity" to it.quantity, "price" to it.price)
+                        }
+                        val paymentsMap = paymentsList.map {
+                            mapOf("date" to it.date, "amount" to it.amount, "method" to it.method)
+                        }
+                        val invoiceData = mapOf<String, Any>(
+                            "invoice_number" to invoiceNumber.trim(),
+                            "bill_to" to billTo.trim(),
+                            "keberangkatan" to keberangkatan.trim(),
+                            "hotel_madinah" to hotelMadinah.trim(),
+                            "hotel_makkah" to hotelMakkah.trim(),
+                            "fasilitas_text" to fasilitasText,
+                            "excluded_text" to excludedText,
+                            "items" to itemsList,
+                            "payments" to paymentsMap,
+                            "total" to totalTagihanLong,
+                            "amount_due" to sisaTagihanClamped
+                        )
+                        val resp = withContext(Dispatchers.IO) {
+                            AdminApiClient.service.invoiceDataSave(InvoiceDataSaveRequest(
+                                admin_id = adminId,
+                                token = token,
+                                jamaah_id = jamaah.id.toString(),
+                                invoice_data = invoiceData
+                            ))
+                        }
+                        if (resp.success == true) {
+                            invoiceDataSaved = true
+                            savedSnapshot = totalTagihanLong to paymentHistory.sum()
+                            saveDetailMsg = "Detail paket tersimpan. Siap generate invoice."
+                            saveDetailError = false
+                        } else {
+                            saveDetailMsg = resp.error ?: "Gagal simpan detail"
+                            saveDetailError = true
+                        }
+                    } catch (e: Exception) {
+                        saveDetailMsg = "Error: " + (e.message ?: "unknown")
+                        saveDetailError = true
+                    }
+                    savingDetail = false
+                }
+            },
+            enabled = !savingDetail && !saving,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (invoiceDataSaved) AdminSuccess else AdminPrimary
+            ),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            if (savingDetail) CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+            else Text(
+                if (invoiceDataSaved) "DETAIL PAKET TERSIMPAN" else "SIMPAN DETAIL PAKET",
+                fontWeight = FontWeight.Bold
+            )
+        }
+        if (saveDetailMsg.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(saveDetailMsg, fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                color = if (saveDetailError) AdminDanger else AdminSuccess)
+        }
+
+        // ============ TOMBOL GENERATE (hanya aktif setelah SIMPAN NILAI + DETAIL) ============
+        Spacer(Modifier.height(8.dp))
         Button(
             onClick = {
                 generating = true

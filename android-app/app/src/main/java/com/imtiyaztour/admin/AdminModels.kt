@@ -265,3 +265,22 @@ data class JamaahCreateResponse(
     val message: String? = null,
     val error: String? = null
 )
+
+// ============================================================================
+// [INVOICE-DATA] v1.0 — Model untuk simpan/ambil detail paket (invoice data)
+// ============================================================================
+data class InvoiceDataSaveRequest(
+    val admin_id: String,
+    val token: String,
+    val jamaah_id: String,
+    val invoice_data: Map<String, Any>
+)
+
+data class InvoiceDataGetResponse(
+    val success: Boolean? = null,
+    val jamaah_id: Int = 0,
+    val invoice_data: Map<String, Any>? = null,
+    val updated_at: Long = 0L,
+    val has_data: Boolean = false,
+    val error: String? = null
+)

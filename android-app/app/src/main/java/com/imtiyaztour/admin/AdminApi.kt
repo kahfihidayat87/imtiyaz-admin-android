@@ -36,6 +36,12 @@ interface AdminApiService {
     @POST("wp-json/imtiyaz/v1/admin-jamaah-delete")
     suspend fun jamaahDelete(@Body body: Map<String, String>): SimpleResponse
 
+    @POST("wp-json/imtiyaz/v1/admin-invoice-data-save")
+    suspend fun invoiceDataSave(@Body body: InvoiceDataSaveRequest): SimpleResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-invoice-data-get")
+    suspend fun invoiceDataGet(@Body body: Map<String, String>): InvoiceDataGetResponse
+
     @POST("wp-json/imtiyaz/v1/admin-checklist-update")
     suspend fun checklistUpdate(@Body body: ChecklistUpdateRequest): SimpleResponse
 
