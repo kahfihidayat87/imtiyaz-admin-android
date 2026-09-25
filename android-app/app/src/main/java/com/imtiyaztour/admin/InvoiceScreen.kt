@@ -88,12 +88,32 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
     val items = remember {
         mutableStateListOf(InvoiceItem("Paket Umrah", 1, jamaah.total_tagihan))
     }
-    // State untuk simpan & load detail paket (HARUS sebelum LaunchedEffect yang pakai)
+
+    // ============ FASILITAS ============
+    var fasilitasText by remember { mutableStateOf(DEFAULT_FASILITAS.joinToString("\n")) }
+    var excludedText by remember { mutableStateOf(DEFAULT_EXCLUDED.joinToString("\n")) }
+
+    // ============ STATE SIMPAN NILAI TAGIHAN ============
+    var savedSnapshot by remember { mutableStateOf<Pair<Long, Long>?>(null) }
+    var saving by remember { mutableStateOf(false) }
+    var saveMsg by remember { mutableStateOf("") }
+    var saveMsgError by remember { mutableStateOf(false) }
+
+    // ============ STATE SIMPAN DETAIL PAKET & GENERATE ============
     var initialLoading by remember { mutableStateOf(true) }
     var invoiceDataSaved by remember { mutableStateOf(false) }
     var savingDetail by remember { mutableStateOf(false) }
     var saveDetailMsg by remember { mutableStateOf("") }
     var saveDetailError by remember { mutableStateOf(false) }
+    var generating by remember { mutableStateOf(false) }
+    var generateMsg by remember { mutableStateOf("") }
+    var generateMsgError by remember { mutableStateOf(false) }
+    var resultUrl by remember { mutableStateOf("") }
+
+    // ============ COMPUTED VALUES ============
+    val currentSnapshot = totalTagihanLong to totalSudah
+    val hasUnsavedChanges = savedSnapshot == null || savedSnapshot != currentSnapshot
+    val canGenerate = !hasUnsavedChanges && savedSnapshot != null && invoiceDataSaved && !initialLoading
 
     // Sync item pertama dengan totalTagihan
     // (hanya kalau data invoice BELUM di-load dari server)
@@ -159,25 +179,6 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
         }
         initialLoading = false
     }
-
-    // ============ FASILITAS ============
-    var fasilitasText by remember { mutableStateOf(DEFAULT_FASILITAS.joinToString("\n")) }
-    var excludedText by remember { mutableStateOf(DEFAULT_EXCLUDED.joinToString("\n")) }
-
-    // ============ STATE SIMPAN / GENERATE ============
-    var savedSnapshot by remember { mutableStateOf<Pair<Long, Long>?>(null) }
-    var saving by remember { mutableStateOf(false) }
-    var saveMsg by remember { mutableStateOf("") }
-    var saveMsgError by remember { mutableStateOf(false) }
-
-    var generating by remember { mutableStateOf(false) }
-    var generateMsg by remember { mutableStateOf("") }
-    var generateMsgError by remember { mutableStateOf(false) }
-    var resultUrl by remember { mutableStateOf("") }
-
-    val currentSnapshot = totalTagihanLong to totalSudah
-    val hasUnsavedChanges = savedSnapshot == null || savedSnapshot != currentSnapshot
-    val canGenerate = !hasUnsavedChanges && savedSnapshot != null && invoiceDataSaved && !initialLoading
 
     Column(
         Modifier
