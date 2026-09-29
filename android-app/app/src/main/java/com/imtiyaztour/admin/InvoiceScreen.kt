@@ -1,5 +1,6 @@
 package com.imtiyaztour.admin
 
+import android.app.DatePickerDialog
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
@@ -8,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 // ============================================================================
 // [INVOICE] v1.1 — Form generate invoice PDF (dengan tombol SIMPAN dulu)
@@ -70,11 +73,11 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
         mutableStateOf(if (jamaah.total_tagihan > 0) jamaah.total_tagihan.toString() else "0")
     }
     val paymentHistory = remember {
-        mutableStateListOf<Long>().apply {
-            if (jamaah.sudah_dibayar > 0) add(jamaah.sudah_dibayar)
+        mutableStateListOf<InvoicePayment>().apply {
+            if (jamaah.sudah_dibayar > 0) add(InvoicePayment(System.currentTimeMillis(), jamaah.sudah_dibayar, "bank"))
         }
     }
-    val totalSudah = paymentHistory.sum()
+    val totalSudah = paymentHistory.sumOf { it.amount }
     val totalTagihanLong = totalTagihan.toLongOrNull() ?: 0L
     val sisaTagihan = totalTagihanLong - totalSudah
     val sisaTagihanClamped = if (sisaTagihan < 0) 0L else sisaTagihan
@@ -186,12 +189,13 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                     paymentHistory.clear()
                     payments.forEach { m ->
                         val amt = (m["amount"] as? Number)?.toLong() ?: 0L
-                        if (amt > 0) paymentHistory.add(amt)
+                        val dt = (m["date"] as? Number)?.toLong() ?: System.currentTimeMillis()
+                        if (amt > 0) paymentHistory.add(InvoicePayment(dt, amt, "bank"))
                     }
                 }
 
                 invoiceDataSaved = true
-                savedSnapshot = totalTagihanLong to paymentHistory.sum()
+                savedSnapshot = totalTagihanLong to paymentHistory.sumOf { it.amount }
             }
         } catch (e: Exception) {
             // Abaikan — user isi manual
@@ -262,7 +266,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Riwayat Pembayaran", fontWeight = FontWeight.Bold, color = AdminPrimary, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { paymentHistory.add(0L) }) {
+                    TextButton(onClick = { paymentHistory.add(InvoicePayment()) }) {
                         Icon(Icons.Default.Add, null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("Tambah", fontSize = 12.sp)
@@ -272,28 +276,67 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                 if (paymentHistory.isEmpty()) {
                     Text("Belum ada pembayaran.", fontSize = 11.sp, color = Color.Gray)
                 }
-                paymentHistory.forEachIndexed { idx, amount ->
+                fun fmtDateShort(millis: Long): String {
+                    val c = Calendar.getInstance()
+                    c.timeInMillis = millis
+                    return "%02d/%02d/%d".format(c.get(Calendar.DAY_OF_MONTH), c.get(Calendar.MONTH) + 1, c.get(Calendar.YEAR))
+                }
+
+                paymentHistory.forEachIndexed { idx, entry ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
-                            value = if (amount == 0L) "" else amount.toString(),
-                            onValueChange = {
-                                val a = it.filter { c -> c.isDigit() }.toLongOrNull() ?: 0L
-                                paymentHistory[idx] = a
-                            },
-                            label = { Text("Jumlah (Rp)") },
-                            placeholder = { Text("0", fontSize = 12.sp) },
+                            value = fmtDateShort(entry.date),
+                            onValueChange = { },
+                            readOnly = true,
+                            label = { Text("Tanggal", fontSize = 10.sp) },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
+                            trailingIcon = {
+                                IconButton(onClick = {
+                                    val cal = Calendar.getInstance()
+                                    cal.timeInMillis = entry.date
+                                    DatePickerDialog(
+                                        context,
+                                        { _, y, m, d ->
+                                            val c = Calendar.getInstance()
+                                            c.set(y, m, d, 0, 0, 0)
+                                            c.set(Calendar.MILLISECOND, 0)
+                                            paymentHistory[idx] = paymentHistory[idx].copy(date = c.timeInMillis)
+                                        },
+                                        cal.get(Calendar.YEAR),
+                                        cal.get(Calendar.MONTH),
+                                        cal.get(Calendar.DAY_OF_MONTH)
+                                    ).show()
+                                }) {
+                                    Icon(Icons.Default.DateRange, "Pilih tanggal", modifier = Modifier.size(18.dp))
+                                }
+                            },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White
                             )
                         )
                         Spacer(Modifier.width(8.dp))
+                        OutlinedTextField(
+                            value = if (entry.amount == 0L) "" else entry.amount.toString(),
+                            onValueChange = {
+                                val a = it.filter { c -> c.isDigit() }.toLongOrNull() ?: 0L
+                                paymentHistory[idx] = paymentHistory[idx].copy(amount = a)
+                            },
+                            label = { Text("Jumlah (Rp)", fontSize = 10.sp) },
+                            placeholder = { Text("0", fontSize = 12.sp) },
+                            modifier = Modifier.weight(1.2f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
                         IconButton(onClick = { paymentHistory.removeAt(idx) }) {
                             Icon(Icons.Default.Delete, "Hapus", tint = AdminDanger)
                         }
                     }
+                    Spacer(Modifier.height(6.dp))
                 }
 
                 Divider(Modifier.padding(vertical = 6.dp))
@@ -493,8 +536,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                 scope.launch {
                     try {
                         val paymentsList = paymentHistory
-                            .filter { it > 0 }
-                            .map { InvoicePayment(System.currentTimeMillis(), it, "bank") }
+                            .filter { it.amount > 0 }
                         val itemsList = items.map {
                             mapOf("description" to it.description, "quantity" to it.quantity, "price" to it.price)
                         }
@@ -527,7 +569,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                         }
                         if (resp.success == true) {
                             invoiceDataSaved = true
-                            savedSnapshot = totalTagihanLong to paymentHistory.sum()
+                            savedSnapshot = totalTagihanLong to paymentHistory.sumOf { it.amount }
                             saveDetailMsg = "Detail paket tersimpan. Siap generate invoice."
                             saveDetailError = false
                         } else {
@@ -571,14 +613,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                 scope.launch {
                     try {
                         val paymentsList = paymentHistory
-                            .filter { it > 0 }
-                            .mapIndexed { _, amount ->
-                                InvoicePayment(
-                                    date = System.currentTimeMillis(),
-                                    amount = amount,
-                                    method = "bank"
-                                )
-                            }
+                            .filter { it.amount > 0 }
                         val req = InvoiceRequest(
                             jamaah_id = jamaah.id.toString(),
                             invoice_number = invoiceNumber.trim(),
