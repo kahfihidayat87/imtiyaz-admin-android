@@ -210,6 +210,25 @@ data class InvoiceListItem(
 // ============================================================================
 // [SUPER-ADMIN] v1.0 — Model untuk kelola akun admin
 // ============================================================================
+// ============================================================================
+// [SKRINING] v1.0 - List skrining kesehatan
+// ============================================================================
+data class SkriningItem(
+    val id: Int = 0,
+    val jamaah_id: Int? = null,
+    val nama: String = "",
+    val usia: Int = 0,
+    val tanggal: Long = 0L,
+    val catatan_kritis: Boolean = false
+)
+
+data class SkriningListResponse(
+    val success: Boolean? = null,
+    val total: Int = 0,
+    val list: List<SkriningItem> = emptyList(),
+    val error: String? = null
+)
+
 data class AdminItem(
     val id: Int = 0,
     val username: String = "",

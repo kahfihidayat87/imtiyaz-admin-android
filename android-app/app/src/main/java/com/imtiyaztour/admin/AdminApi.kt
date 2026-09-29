@@ -74,6 +74,9 @@ interface AdminApiService {
     suspend fun buktiReject(@Body body: Map<String, String>): SimpleResponse
 
     // ===== SUPER-ADMIN =====
+    @POST("wp-json/imtiyaz/v1/admin-skrining-list")
+    suspend fun skriningList(@Body body: Map<String, String>): SkriningListResponse
+
     @POST("wp-json/imtiyaz/v1/admin-list")
     suspend fun adminList(@Body body: Map<String, String>): AdminListResponse
 

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Payments
@@ -22,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
@@ -56,6 +59,7 @@ fun AdminApp() {
         "super_admin" -> listOf(
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
+            AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
@@ -77,6 +81,7 @@ fun AdminApp() {
         else -> listOf( // admin (default)
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
+            AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
@@ -105,8 +110,23 @@ fun AdminApp() {
                     NavigationBarItem(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
-                        icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { Text(tab.label, fontSize = 10.sp) }
+                        icon = {
+                            Icon(
+                                tab.icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(if (tabs.size > 6) 20.dp else 24.dp)
+                            )
+                        },
+                        label = {
+                            Text(
+                                tab.label,
+                                fontSize = if (tabs.size > 6) 9.sp else 10.sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        },
+                        alwaysShowLabel = tabs.size <= 6
                     )
                 }
             }
@@ -135,6 +155,7 @@ fun AdminApp() {
                         )
                     }
                 }
+                "skrining" -> SkriningListScreen()
                 "bukti" -> BuktiListScreen()
                 "kanal" -> KanalListScreen()
                 "info" -> PengumumanScreen()
