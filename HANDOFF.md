@@ -228,3 +228,40 @@ Script ini:
 - **Sinkronisasi `_invoice_data`** ke WP postmeta (backup otomatis)
 - **Supervisor / watchdog Node** auto-respawn (mitigasi crash tanpa restart manual)
 - **Bump versi app admin** ke 1.1.0 + changelog
+
+---
+
+## TAHAP 19 — Export PDF Skrining (29 Sep 2026)
+
+**Status:** Selesai & teruji — 1 halaman
+
+### Server Endpoint
+- File: `~/domains/api.pastiumrah.com/hbuilds/current/nodejs/skrining-routes.js` (~215 baris, server-only)
+- Route: `GET /api/skrining/pdf/:postId`
+- Registrasi: `app.js:542` setelah `require('./invoice-routes')...`
+- Deps: reuse `axios`, `pdfkit`, `WP_URL`, `WP_AUTH`
+
+### WP Endpoint
+- File: `imtiyaz-connector.php` (plugin `connector-app`)
+- Route: `GET /wp-json/imtiyaz/v1/skrining/:id`
+- Ambil `_skrining_data` + `_jamaah_id`, strip `token`, return JSON
+
+### Fitur PDF
+- 8 section A-H, format mirip invoice (logo 46pt, margin 36)
+- 1 halaman A4 untuk ~32 field
+- Info box: nama / jamaah ID / usia (gap ke section A)
+- Font: header 14pt, section 9.5pt, field 8.5pt, row 10pt
+- Catatan otomatis medis (auto-detect kondisi kritis)
+- Footer `lineBreak:false` + posisi dalam margin (fix spurious page)
+
+### Cara Pakai
+https://api.pastiumrah.com/api/skrining/pdf/1482
+
+### Test
+- Post 1482 (gjkk, jamaah 1454): 1 halaman, layout rapi
+- Post 1481 (title kosong): 1 halaman
+
+### Catatan
+- Server code TIDAK di git — edit langsung via SSH
+- Backup: `app.js.bak-skrining-*`, `skrining-routes.js.bak-*`
+- Log diagnostic: `[skrining-pdf] pages: N` di console.log
