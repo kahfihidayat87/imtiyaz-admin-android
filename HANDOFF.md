@@ -151,3 +151,27 @@ sleep 4
 # 3. Cek
 ps aux | grep "app.js" | grep -v grep
 tail -3 console.log
+---
+
+## TAHAP 17 — Fix Invoice (29 Sep 2026)
+
+### Fix 1: Tanggal per Pembayaran
+
+**Commit:** `fix(invoice): tambah input tanggal per pembayaran...`
+**File:** `android-app/app/src/main/java/com/imtiyaztour/admin/InvoiceScreen.kt` + `AdminModels.kt`
+
+**Sebelum:** Semua pembayaran pakai `System.currentTimeMillis()` saat Generate → tanggal sama semua.
+**Sesudah:** Setiap baris riwayat punya field Tanggal (dengan DatePicker) + Jumlah.
+
+### Fix 2: Logo di Invoice PDF
+
+**File server:** `~/domains/api.pastiumrah.com/hbuilds/versions/01a0c969-934d-723f-9aba-f2cf0517d7a8/nodejs/invoice-routes.js`
+**Asset:** `uploads/logo-imtiyaz.png` (150×150 RGBA, 13917 bytes)
+
+**Perubahan:**
+- Logo 80×80 pt di kiri atas (x=40, y=40)
+- Teks header digeser ke x=130
+- Divider hijau digeser dari y=100 → y=128
+- y0 (baseline meta) digeser dari 115 → 143
+
+**Backup:** `/tmp/invoice-routes.js.bak-logo-*` di server
