@@ -175,3 +175,56 @@ tail -3 console.log
 - y0 (baseline meta) digeser dari 115 → 143
 
 **Backup:** `/tmp/invoice-routes.js.bak-logo-*` di server
+
+---
+
+## TAHAP 18 — Invoice Polish (29 Sep 2026)
+
+### Perubahan Server (`invoice-routes.js`)
+
+| # | Perubahan | Lokasi |
+|---|---|---|
+| 1 | Logo perkecil 80→64 pt (y: 40→44) | line 45 |
+| 2 | Tambah mobile kedua: `081999876546` | line 51 |
+| 3 | "Amount Due (IDR)" geser kiri (x: 350→310, value 495→455, width 60→100) — anti-wrap | line 168-170 |
+| 4 | Footer: "Apabila terdapat ketidaksesuaian dengan data Anda, mohon bisa melakukan konfirmasi ke Admin Keuangan di 0811176544" | line 191 |
+
+**Backup server:** `/tmp/invoice-routes.js.bak-tahap18-*`
+
+### Perubahan Android (`InvoiceScreen.kt`)
+
+- State `paymentDue` + UI field "Payment Due" + DatePicker + mapping `payment_due = paymentDue`
+
+### Commit TAHAP 18
+
+- `372eabd` feat(invoice): tambah field Payment Due di app admin
+- (server) perubahan invoice-routes.js langsung di server (backup di `/tmp/`)
+
+---
+
+## Restart Node.js — CARA WAJIB
+
+**Gunakan script:** `bash scripts/restart-node-admin.sh`
+
+Script ini:
+1. Kill **SEMUA** proses via filter `-E "api\.pastiumrah|node app\.js"` (menangkap parent `lsnode` **dan** child `node app.js`)
+2. Verifikasi proses bersih sebelum spawn
+3. Arsip log lama (auto timestamp)
+4. Spawn `node app.js` baru dengan env lengkap
+5. Cek stderr — jika ada error, exit dengan kode 1
+
+**Target startup sukses:**
+- PID tunggal `node app.js`
+- `stderr.log` **KOSONG** (tidak ada EADDRINUSE)
+- Log: `Imtiyaz API v2.12.0 jalan di port 3000`
+
+**Catatan:** Proses `lsnode:...api.pastiumrah...` (LiteSpeed wrapper) **bisa auto-respawn** setelah kill — ini normal. Selama port 3000 sudah dipakai spawn manual, wrapper akan idle dan tidak mengganggu.
+
+---
+
+## Kandidat Lanjutan (Sesi Berikutnya)
+
+- **PDF cache buster** — tambah `&v=<timestamp>` di `pdf_url` response agar browser selalu ambil PDF terbaru
+- **Sinkronisasi `_invoice_data`** ke WP postmeta (backup otomatis)
+- **Supervisor / watchdog Node** auto-respawn (mitigasi crash tanpa restart manual)
+- **Bump versi app admin** ke 1.1.0 + changelog
