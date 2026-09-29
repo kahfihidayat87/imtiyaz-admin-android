@@ -169,8 +169,8 @@ data class InvoiceItem(
 )
 
 data class InvoicePayment(
-    val date: Long,
-    val amount: Long,
+    val date: Long = System.currentTimeMillis(),
+    val amount: Long = 0L,
     val method: String = "bank"
 )
 
