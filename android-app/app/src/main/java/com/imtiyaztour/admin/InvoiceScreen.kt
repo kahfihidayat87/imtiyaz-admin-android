@@ -67,6 +67,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
         mutableStateOf("INV-${jamaah.id}-${System.currentTimeMillis() / 1000}")
     }
     var billTo by remember { mutableStateOf(jamaah.nama) }
+    var paymentDue by remember { mutableStateOf(System.currentTimeMillis()) }
 
     // ============ NILAI TAGIHAN (bagian utama) ============
     var totalTagihan by remember {
@@ -445,6 +446,31 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
+                val payDueCal = Calendar.getInstance().apply { timeInMillis = paymentDue }
+                OutlinedTextField(
+                    value = "%02d/%02d/%d".format(payDueCal.get(Calendar.DAY_OF_MONTH), payDueCal.get(Calendar.MONTH) + 1, payDueCal.get(Calendar.YEAR)),
+                    onValueChange = { },
+                    readOnly = true,
+                    label = { Text("Payment Due") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            val cal = Calendar.getInstance().apply { timeInMillis = paymentDue }
+                            DatePickerDialog(context,
+                                { _, y, m, d ->
+                                    val c = Calendar.getInstance()
+                                    c.set(y, m, d, 0, 0, 0)
+                                    c.set(Calendar.MILLISECOND, 0)
+                                    paymentDue = c.timeInMillis
+                                },
+                                cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)
+                            ).show()
+                        }) {
+                            Icon(Icons.Default.DateRange, "Pilih tanggal", modifier = Modifier.size(18.dp))
+                        }
+                    }
+                )
             }
         }
 
@@ -619,7 +645,7 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                             invoice_number = invoiceNumber.trim(),
                             bill_to = billTo.trim(),
                             invoice_date = System.currentTimeMillis(),
-                            payment_due = System.currentTimeMillis(),
+                            payment_due = paymentDue,
                             items = items.toList(),
                             total = totalTagihanLong,
                             amount_due = sisaTagihanClamped,
