@@ -182,6 +182,10 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                         val price = (m["price"] as? Number)?.toLong() ?: 0L
                         items.add(InvoiceItem(desc, qty, price))
                     }
+                    // Sync totalTagihan dengan item pertama (kalau cuma 1 item)
+                    if (items.size == 1 && items[0].price > 0L) {
+                        totalTagihan = items[0].price.toString()
+                    }
                 }
 
                 @Suppress("UNCHECKED_CAST")
@@ -640,6 +644,10 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                     try {
                         val paymentsList = paymentHistory
                             .filter { it.amount > 0 }
+                        // Hitung ulang dari items (source of truth) — jaga konsistensi
+                        val computedTotal = items.sumOf { it.quantity.toLong() * it.price }
+                        val computedPaid = paymentsList.sumOf { it.amount }
+                        val computedDue = if (computedTotal - computedPaid < 0L) 0L else computedTotal - computedPaid
                         val req = InvoiceRequest(
                             jamaah_id = jamaah.id.toString(),
                             invoice_number = invoiceNumber.trim(),
@@ -647,8 +655,8 @@ fun InvoiceScreen(jamaah: JamaahSummary, onBack: () -> Unit) {
                             invoice_date = System.currentTimeMillis(),
                             payment_due = paymentDue,
                             items = items.toList(),
-                            total = totalTagihanLong,
-                            amount_due = sisaTagihanClamped,
+                            total = computedTotal,
+                            amount_due = computedDue,
                             keberangkatan = keberangkatan.ifBlank { null },
                             hotel_madinah = hotelMadinah.ifBlank { null },
                             hotel_makkah = hotelMakkah.ifBlank { null },
