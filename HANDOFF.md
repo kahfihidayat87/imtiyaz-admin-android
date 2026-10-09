@@ -1,9 +1,6 @@
-cd /c/Users/DELL/Documents/GitHub/imtiyaz-admin-android/
-
-cat > HANDOFF.md << 'EOF'
 # 🎯 HANDOFF — Imtiyaz Admin Android
 
-**Update terakhir:** 25 Sep 2026
+**Update terakhir:** 10 Okt 2026 (v1.0.0, TAHAP 21 SELESAI)
 **Repo:** https://github.com/kahfihidayat87/imtiyaz-admin-android
 **Local:** `C:\Users\DELL\Documents\GitHub\imtiyaz-admin-android`
 
@@ -13,8 +10,8 @@ cat > HANDOFF.md << 'EOF'
 
 | Item | Nilai |
 |---|---|
-| Versi aktif | (belum bump dari 1.0.0) |
-| Commit terakhir | (lihat `git log --oneline -3`) |
+| Versi aktif | **1.0.0** (versionCode 1) — kandidat bump ke 1.1.0 |
+| Commit terakhir | `411ea5d` docs: catat fitur Cek Kesehatan di Saya Screen |
 | Package | `com.imtiyaztour.admin` |
 | Warna tema | Biru `#1E3A8A` (`AdminPrimary`) |
 | Distribusi | Private APK (share langsung) |
@@ -89,6 +86,9 @@ cat > HANDOFF.md << 'EOF'
 | 6 | Simpan detail paket | `/admin-invoice-data-save` | `InvoiceScreen.kt` |
 | 7 | Ambil detail paket | `/admin-invoice-data-get` | `InvoiceScreen.kt` |
 | 8 | Approve/reject bukti | `/admin-bukti-approve`, `/admin-bukti-reject` | `BuktiListScreen.kt` |
+| 9 | Tab Skrining + list + buka PDF | `/wp-json/imtiyaz/v1/skrining-list`, `/api/skrining/pdf/:id` | `SkriningListScreen.kt` |
+| 10 | Form Cek Kesehatan (EditJamaah) | `/admin-kesehatan-save`, `/admin-kesehatan-get` | `EditJamaahScreen.kt` |
+| 11 | Config item kesehatan (WP) | `/kesehatan-items` (public) | `EditJamaahScreen.kt` |
 
 ---
 
@@ -306,3 +306,52 @@ Ketiganya tulis ke postmeta `_kesehatan_data` (JSON).
   "catatan": "Sehat",
   "updated_at": 1791559534
 }
+
+---
+
+## TAHAP 20 — Tab Skrining + Buka PDF (9 Okt 2026)
+
+**Status:** Selesai & teruji
+
+### Fitur App Admin
+- Tab baru **Skrining** di bottom navigation
+- List skrining dari WP (`skrining_kesehatan` post type)
+- Tap item -> buka PDF: `https://api.pastiumrah.com/api/skrining/pdf/:postId`
+
+### File Terkait
+- `SkriningListScreen.kt` (baru)
+- `MainActivity.kt` — tambah tab Skrining
+
+### Endpoint
+- `GET /wp-json/imtiyaz/v1/skrining-list` — list post skrining
+- `GET /api/skrining/pdf/:id` (Node.js) — PDF 1 halaman
+
+---
+
+## TAHAP 21 — Cek Kesehatan di App Admin (9 Okt 2026)
+
+**Status:** Selesai & teruji
+
+### Fitur
+Form di `EditJamaahScreen.kt` (bawah Checklist Dokumen):
+- Item default: Tensi, Gula Darah, Asam Urat, Kolesterol
+- Item bisa dikonfigurasi via WP Admin -> Pengaturan Kesehatan
+- Metadata: Tanggal, Petugas, Catatan
+
+### Alur
+1. Admin buka jamaah -> scroll ke Cek Kesehatan
+2. Isi nilai per item -> Simpan
+3. POST ke `/admin-kesehatan-save` -> tulis postmeta `_kesehatan_data`
+
+### File Terkait
+- `EditJamaahScreen.kt` — form + submit
+- `AdminModels.kt` — model `KesehatanData`, `KesehatanItemConfig`
+- `AdminApi.kt` — endpoint kesehatan
+
+### Endpoint
+- `GET /imtiyaz/v1/kesehatan-items` — config item (public)
+- `POST /imtiyaz/v1/admin-kesehatan-get` — admin ambil data jamaah
+- `POST /imtiyaz/v1/admin-kesehatan-save` — admin simpan
+
+### Verifikasi
+Jamaah app baca via `POST /imtiyaz/v1/kesehatan-me` -> Card "Cek Kesehatan" di Saya Screen.
