@@ -1,6 +1,6 @@
 # 🎯 HANDOFF — Imtiyaz Admin Android
 
-**Update terakhir:** 10 Okt 2026 (v1.0.0, TAHAP 21 SELESAI)
+**Update terakhir:** 10 Okt 2026 (v1.1.0, TAHAP 22 SELESAI)
 **Repo:** https://github.com/kahfihidayat87/imtiyaz-admin-android
 **Local:** `C:\Users\DELL\Documents\GitHub\imtiyaz-admin-android`
 
@@ -10,11 +10,11 @@
 
 | Item | Nilai |
 |---|---|
-| Versi aktif | **1.0.0** (versionCode 1) — kandidat bump ke 1.1.0 |
+| Versi aktif | **1.1.0** (versionCode 2) — dirilis via GitHub Release |
 | Commit terakhir | `411ea5d` docs: catat fitur Cek Kesehatan di Saya Screen |
 | Package | `com.imtiyaztour.admin` |
 | Warna tema | Biru `#1E3A8A` (`AdminPrimary`) |
-| Distribusi | Private APK (share langsung) |
+| Distribusi | APK Release signed via GitHub Release + share langsung |
 
 ---
 
@@ -355,3 +355,25 @@ Form di `EditJamaahScreen.kt` (bawah Checklist Dokumen):
 
 ### Verifikasi
 Jamaah app baca via `POST /imtiyaz/v1/kesehatan-me` -> Card "Cek Kesehatan" di Saya Screen.
+
+---
+
+## TAHAP 22 — CI Workflow + Signing (10 Okt 2026)
+
+**Status:** Selesai — rilis pertama via CI
+
+### Perubahan
+- `versionCode 1 -> 2`, `versionName "1.0.0" -> "1.1.0"`
+- `signingConfigs` di `app/build.gradle` (env var: `RELEASE_KEYSTORE_PATH`, `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`)
+- Workflow `build-apk.yml` dirombak:
+  - `paths-ignore`: `.md`, `.gitignore`, `.gitattributes`, `scripts/`, `logs/`
+  - Build debug APK (artifact)
+  - Build release APK signed (env var, conditional)
+  - Auto GitHub Release dengan tag `v1.1.0-build<run_number>`
+- Reuse keystore dari repo jamaah (package name beda, aman)
+
+### Secrets (4, sama dengan jamaah)
+- `RELEASE_KEYSTORE_BASE64`
+- `RELEASE_KEYSTORE_PASSWORD`
+- `RELEASE_KEY_ALIAS`
+- `RELEASE_KEY_PASSWORD`
