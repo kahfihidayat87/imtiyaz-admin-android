@@ -265,3 +265,44 @@ https://api.pastiumrah.com/api/skrining/pdf/1482
 - Server code TIDAK di git — edit langsung via SSH
 - Backup: `app.js.bak-skrining-*`, `skrining-routes.js.bak-*`
 - Log diagnostic: `[skrining-pdf] pages: N` di console.log
+
+
+---
+
+## TAHAP 21 — Cek Kesehatan Jamaah (9 Okt 2026)
+
+**Status:** ✅ Selesai & teruji
+
+### Fitur
+Admin dapat mengisi hasil pemeriksaan kesehatan jamaah:
+- Tensi, Gula Darah, Asam Urat, Kolesterol (default)
+- Item bisa ditambah/edit/hapus via WP Admin → Pengaturan Kesehatan
+- Metadata: Tanggal, Petugas, Catatan
+
+### Sumber Input (3 jalur)
+1. **Admin App** — form di EditJamaahScreen, bawah Checklist Dokumen
+2. **WP Admin** — metabox di Edit Post Jamaah
+3. **API manual** — POST /admin-kesehatan-save
+
+Ketiganya tulis ke postmeta `_kesehatan_data` (JSON).
+
+### File Server
+- `imtiyaz-admin-kesehatan.php` (page + metabox)
+- `imtiyaz-kesehatan-endpoints.php` (REST endpoints)
+- Terdaftar via `require_once` di `imtiyaz-connector.php`
+
+### Endpoints Baru
+- `GET /imtiyaz/v1/kesehatan-items` — list item config (public)
+- `POST /imtiyaz/v1/admin-kesehatan-get` — admin ambil data
+- `POST /imtiyaz/v1/admin-kesehatan-save` — admin simpan
+- `POST /imtiyaz/v1/kesehatan-me` — jamaah lihat sendiri
+
+### Data Structure
+```json
+{
+  "items": {"tensi": {"value": "120/80"}, ...},
+  "tanggal": 1791559497,
+  "petugas": "Wulan",
+  "catatan": "Sehat",
+  "updated_at": 1791559534
+}
