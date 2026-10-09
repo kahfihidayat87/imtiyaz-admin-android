@@ -47,6 +47,36 @@ fun EditJamaahScreen(
 
     var dokumenList by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var checklist by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
+
+    // ===== CEK KESEHATAN =====
+    var kesehatanItemsConfig by remember { mutableStateOf<List<KesehatanItem>>(emptyList()) }
+    var kesehatanValues by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var kesehatanTanggal by remember { mutableStateOf(System.currentTimeMillis()) }
+    var kesehatanPetugas by remember { mutableStateOf("") }
+    var kesehatanCatatan by remember { mutableStateOf("") }
+
+    // Load data kesehatan jamaah
+    LaunchedEffect(jamaah.id) {
+        try {
+            val kresp = withContext(Dispatchers.IO) {
+                AdminApiClient.service.kesehatanGet(mapOf(
+                    "admin_id" to adminId,
+                    "token" to token,
+                    "jamaah_id" to jamaah.id.toString()
+                ))
+            }
+            if (kresp.success == true) {
+                kesehatanItemsConfig = kresp.items_config
+                val kd = kresp.data
+                if (kd != null) {
+                    kesehatanValues = kd.items.mapValues { it.value.value }
+                    if (kd.tanggal > 0L) kesehatanTanggal = kd.tanggal * 1000L
+                    kesehatanPetugas = kd.petugas
+                    kesehatanCatatan = kd.catatan
+                }
+            }
+        } catch (_: Exception) {}
+    }
     var loadingDetail by remember { mutableStateOf(true) }
 
     var saving by remember { mutableStateOf(false) }
@@ -216,6 +246,64 @@ fun EditJamaahScreen(
 
         Spacer(Modifier.height(12.dp))
 
+        Spacer(Modifier.height(12.dp))
+
+        // ==== CEK KESEHATAN ====
+        Card(
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(Modifier.padding(12.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Cek Kesehatan", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = AdminPrimary)
+                    Spacer(Modifier.weight(1f))
+                    if (kesehatanItemsConfig.isNotEmpty()) {
+                        val filled = kesehatanItemsConfig.count { !(kesehatanValues[it.id] ?: "").isNullOrBlank() }
+                        Text("$filled / " + kesehatanItemsConfig.size, fontSize = 11.sp, color = AdminTextGray)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+
+                if (kesehatanItemsConfig.isEmpty()) {
+                    Text("Memuat item kesehatan...", fontSize = 11.sp, color = AdminTextGray)
+                } else {
+                    kesehatanItemsConfig.forEach { item ->
+                        val value = kesehatanValues[item.id] ?: ""
+                        val labelText = item.label + if (item.unit.isNotBlank()) " (" + item.unit + ")" else ""
+                        OutlinedTextField(
+                            value = value,
+                            onValueChange = { v ->
+                                kesehatanValues = kesehatanValues.toMutableMap().apply { put(item.id, v) }
+                            },
+                            label = { Text(labelText, fontSize = 12.sp) },
+                            placeholder = { Text(item.hint, fontSize = 11.sp) },
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            singleLine = true
+                        )
+                    }
+
+                    Spacer(Modifier.height(6.dp))
+
+                    OutlinedTextField(
+                        value = kesehatanPetugas,
+                        onValueChange = { kesehatanPetugas = it },
+                        label = { Text("Petugas / Klinik", fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = kesehatanCatatan,
+                        onValueChange = { kesehatanCatatan = it },
+                        label = { Text("Catatan", fontSize = 12.sp) },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        minLines = 2
+                    )
+                }
+            }
+        }
+
         // ==== TOGGLE TL (hanya admin) ====
         if (isAdmin) {
             Card(
@@ -273,6 +361,35 @@ fun EditJamaahScreen(
                                 msgError = true
                                 saving = false
                                 return@launch
+                            }
+                        }
+
+                        // Save data kesehatan
+                        if (kesehatanItemsConfig.isNotEmpty()) {
+                            val itemsMap = kesehatanValues
+                                .filterValues { it.isNotBlank() }
+                                .mapValues { (_, v) -> mapOf("value" to v) }
+                            val hasAny = itemsMap.isNotEmpty() ||
+                                         kesehatanPetugas.isNotBlank() ||
+                                         kesehatanCatatan.isNotBlank()
+                            if (hasAny) {
+                                val r3 = withContext(Dispatchers.IO) {
+                                    AdminApiClient.service.kesehatanSave(KesehatanSaveRequest(
+                                        admin_id = adminId,
+                                        token = token,
+                                        jamaah_id = jamaah.id.toString(),
+                                        items = itemsMap,
+                                        tanggal = kesehatanTanggal / 1000L,
+                                        petugas = kesehatanPetugas,
+                                        catatan = kesehatanCatatan
+                                    ))
+                                }
+                                if (r3.success != true) {
+                                    msg = r3.error ?: "Gagal simpan data kesehatan"
+                                    msgError = true
+                                    saving = false
+                                    return@launch
+                                }
                             }
                         }
 

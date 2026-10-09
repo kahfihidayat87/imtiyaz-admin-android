@@ -48,6 +48,12 @@ interface AdminApiService {
     @POST("wp-json/imtiyaz/v1/admin-toggle-tl")
     suspend fun toggleTL(@Body body: Map<String, String>): SimpleResponse
 
+    @POST("wp-json/imtiyaz/v1/admin-kesehatan-get")
+    suspend fun kesehatanGet(@Body body: Map<String, String>): KesehatanGetResponse
+
+    @POST("wp-json/imtiyaz/v1/admin-kesehatan-save")
+    suspend fun kesehatanSave(@Body body: KesehatanSaveRequest): SimpleResponse
+
     @POST("wp-json/imtiyaz/v1/admin-kanal")
     suspend fun kanalList(@Body body: Map<String, String>): KanalListResponse
 

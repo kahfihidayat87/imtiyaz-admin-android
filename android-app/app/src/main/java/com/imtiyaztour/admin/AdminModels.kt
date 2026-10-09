@@ -160,6 +160,48 @@ data class ChecklistUpdateRequest(
 )
 
 // ============================================================================
+// [KESEHATAN] v1.0 — Data cek kesehatan jamaah (diisi admin, dilihat jamaah)
+// ============================================================================
+data class KesehatanItem(
+    val id: String = "",
+    val label: String = "",
+    val unit: String = "",
+    val type: String = "text",
+    val hint: String = ""
+)
+
+data class KesehatanValue(
+    val value: String = ""
+)
+
+data class KesehatanData(
+    val items: Map<String, KesehatanValue> = emptyMap(),
+    val tanggal: Long = 0L,
+    val petugas: String = "",
+    val catatan: String = "",
+    val updated_at: Long = 0L
+)
+
+data class KesehatanGetResponse(
+    val success: Boolean? = null,
+    val jamaah_id: Int = 0,
+    val jamaah_nama: String? = null,
+    val items_config: List<KesehatanItem> = emptyList(),
+    val data: KesehatanData? = null,
+    val error: String? = null
+)
+
+data class KesehatanSaveRequest(
+    val admin_id: String,
+    val token: String,
+    val jamaah_id: String,
+    val items: Map<String, Map<String, String>>,
+    val tanggal: Long,
+    val petugas: String,
+    val catatan: String
+)
+
+// ============================================================================
 // [INVOICE] v1.0 — Model request/response untuk generate invoice PDF
 // ============================================================================
 data class InvoiceItem(
