@@ -33,3 +33,7 @@ assets/
 
 # Backup files tanpa dot prefix
 bak-*
+
+# Log files (lokal)
+console.log
+stderr.log
