@@ -104,6 +104,12 @@ fun LoginScreen(onLoggedIn: () -> Unit) {
                                         resp.role ?: "admin",
                                         resp.kanal_id ?: ""
                                     )
+                                    // Fase 2 D3: Firebase Auth (async, scope independen)
+                                    val adminIdStr = resp.admin_id.toString()
+                                    val wpToken = resp.token
+                                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                                        FirebaseAuthHelper.loginFirebase(adminIdStr, wpToken)
+                                    }
                                     onLoggedIn()
                                 } else {
                                     errorMsg = resp.error ?: "Login gagal"

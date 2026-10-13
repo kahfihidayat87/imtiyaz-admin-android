@@ -57,6 +57,7 @@ fun SayaScreen(onLoggedOut: () -> Unit) {
                         }
                     } catch (e: Exception) { }
                     Prefs.clearLogin(context)
+                    FirebaseAuthHelper.logout()
                     onLoggedOut()
                 }
             },

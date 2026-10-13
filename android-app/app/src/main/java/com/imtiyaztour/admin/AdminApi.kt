@@ -97,6 +97,10 @@ interface AdminApiService {
 
     @POST("api/admin/admin-reset-password")
     suspend fun adminResetPassword(@Body body: Map<String, String>): SimpleResponse
+
+    // Fase 2 D3: Firebase Custom Token untuk admin
+    @POST("api/firebase-token-admin")
+    suspend fun firebaseAdminToken(@Body body: Map<String, String>): FirebaseAdminTokenResponse
 }
 
 object AdminApiClient {
