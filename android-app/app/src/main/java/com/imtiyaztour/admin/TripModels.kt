@@ -80,5 +80,6 @@ fun roomCapacityFor(tipe: String): Int = when (tipe.lowercase()) {
     "double" -> 2
     "triple" -> 3
     "quad" -> 4
+    "quint" -> 5
     else -> 2
 }
