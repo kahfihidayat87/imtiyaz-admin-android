@@ -1,6 +1,6 @@
 # 🎯 HANDOFF — Imtiyaz Admin Android
 
-**Update terakhir:** 10 Okt 2026 (v1.1.0, TAHAP 22 SELESAI)
+**Update terakhir:** 13 Okt 2026 (v1.2.0, TAHAP 24 SELESAI)
 **Repo:** https://github.com/kahfihidayat87/imtiyaz-admin-android
 **Local:** `C:\Users\DELL\Documents\GitHub\imtiyaz-admin-android`
 
@@ -377,3 +377,229 @@ Jamaah app baca via `POST /imtiyaz/v1/kesehatan-me` -> Card "Cek Kesehatan" di S
 - `RELEASE_KEYSTORE_PASSWORD`
 - `RELEASE_KEY_ALIAS`
 - `RELEASE_KEY_PASSWORD`
+
+---
+
+## TAHAP 23 — Fix Endpoint Proxy + DNS Mismatch (12 Okt 2026)
+
+**Status:** ✅ Selesai
+
+### Masalah
+App admin error `failed to connect to pastiumrah.com/88.223.91.143` (port 443) — IP tidak ada di DNS record.
+
+### Fix
+- `ApiConfig.BASE_URL`: `pastiumrah.com` → `api.pastiumrah.com`
+- `AdminApi.kt`: 28 endpoint `wp-json/imtiyaz/v1/admin-*` → `api/admin/admin-*`
+- Node.js: proxy generik `/api/admin/:endpoint` + override DNS lookup di HTTPS agent (`pastiumrah.com` → `127.0.0.1`)
+
+### Commit
+- `370c859` fix(admin): alihkan endpoint admin ke Node.js proxy
+- `2ff2e50` chore(gitignore): blokir console.log + stderr.log
+- `dfe3567` style(icon): ganti ikon app — logo hitam + background putih
+
+---
+
+## TAHAP 24 — Firebase Custom Auth + Fitur D3 Auto-Assign Kamar (13 Okt 2026)
+
+**Status:** ✅ Selesai, teruji end-to-end
+
+### Ringkasan
+
+Dua pilar utama:
+1. **Firebase Custom Auth** — auth admin pakai custom claims (`platform: "admin"`), gate akses Firestore rules
+2. **D3 Auto-Assign Kamar** — fitur agensi untuk kelola trip + hotel + pembagian kamar otomatis
+
+### Fase Firebase (A1-A2)
+
+**Server (Node.js):**
+- Endpoint baru `POST /api/firebase-token-admin` — verifikasi via WP `admin-me`, return custom token
+- Auto-create Firebase user (`createUser`) kalau belum ada
+- Set custom claims: `{ role, adminId, platform: "admin" }`
+
+**Android:**
+- `FirebaseAuthHelper.kt` — login/logout Firebase
+- Firebase SDK: BOM 33.7.0 + Firestore + Auth
+- `google-services.json` dengan package `com.imtiyaztour.admin`
+- Wire login (`LoginScreen.kt`) + logout (`SayaScreen.kt`)
+
+### Firestore Rules (Additive)
+
+```javascript
+function isAdmin() {
+  return isSignedIn() && request.auth.token.platform == 'admin';
+}
+function isAdminOrManager() {
+  return isAdmin() && request.auth.token.role in ['admin', 'super_admin', 'keuangan'];
+}
+match /trips/{tripId}/{document=**} {
+  allow read: if isAdmin();
+  allow write: if isAdminOrManager();
+}
+Fitur D3 — Trip & Kamar
+Models (TripModels.kt):
+
+Trip, Hotel, Room, Penghuni, JamaahManifest, AssignResult, AssignWarning
+
+roomCapacityFor(tipe): single(1), double(2), triple(3), quad(4), quint(5)
+
+Repository (TripRepository.kt):
+
+CRUD Trip / Hotel / Room / Manifest
+
+updateRoomNumber, updateRoomAndPenghuni (sync nama ke manifest)
+
+deleteRoom, deleteTrip (cascade sub-collections)
+
+addRoomsBatch (batch write max 500)
+
+Auto-Assign Engine (RoomAssignEngine.kt):
+
+assign(jamaahList, rooms) — untuk manifest real (D2 nanti)
+
+assignByCount(paxL, paxP, rooms) — untuk input pax saja (D3)
+
+Sort kamar dari kapasitas terbesar
+
+Setiap kamar dialokasikan ke gender yang proporsi keterisiannya paling tertinggal (fair)
+
+1 kamar = 1 gender (tidak mixed)
+
+UI Screens:
+
+TripListScreen — list trip + FAB tambah
+
+AddTripScreen — mode create/edit
+
+TripDetailScreen — list hotel + edit/delete
+
+AddHotelScreen — mode create/edit
+
+HotelRoomScreen — list kamar + warna gender + sortir + export PDF
+
+GenerateRoomsScreen — Flow 1 (Manual): input pax L/P + jumlah kamar per tipe
+
+GenerateKamarAutoScreen — Flow 2 (Auto): input pax L/P saja
+
+Fitur Utama
+Flow 1 — Manual:
+
+Input: pax L/P + jumlah kamar per tipe (quint/quad/triple/double/single)
+
+Preview total kapasitas vs pax
+
+Validasi kapasitas cukup
+
+Auto-assign proporsional
+
+Flow 2 — Auto (baru):
+
+Input: pax L/P saja
+
+Algoritma: quad (4) → triple (3) → double (2) → single (1)
+
+Tanpa quint
+
+Contoh: L=15 → 3 quad + 1 triple = 4 kamar
+
+Preview: format "3 quad + 1 triple = 4 kamar"
+
+Edit Kamar:
+
+Tap kamar → dialog:
+
+Edit nomor kamar
+
+Edit nama setiap penghuni (per field)
+
+Sync nama ke manifest/{jamaahId}.nama
+
+Tombol: BATAL / SIMPAN / HAPUS
+
+Warna Kamar:
+
+Gender	Background	Accent
+Laki-laki	Biru #E3F2FD	#1976D2
+Perempuan	Pink #FCE4EC	#C2185B
+Kosong	Abu #F3F4F6	#6B7280
+Sortir Kamar (Bottom Sheet):
+
+Nomor Kamar (default)
+
+Tipe Kamar (quad → triple → double → single → quint)
+
+Kamar Laki-laki (filter)
+
+Kamar Perempuan (filter)
+
+Export PDF (RoomListPdfExporter.kt):
+
+Layout A4 profesional:
+
+Header hijau brand (logo "IT")
+
+Info block (trip, hotel, total, dicetak)
+
+Tabel: NO / KAMAR / TIPE / KAP / PENGHUNI
+
+Row alternating
+
+Footer + page number (auto multi-page)
+
+Share via FileProvider + Intent.ACTION_SEND
+
+FileProvider di AndroidManifest.xml + res/xml/file_paths.xml
+
+Bug Fix Sesi Ini
+Bug	Root Cause	Fix
+PERMISSION_DENIED Firestore	Admin belum login Firebase	Setup Firebase Auth (A1-A2)
+/api/firebase-token-admin 401	Node.js cek r.data.admin_id, WP return id	Ganti cek ke r.data.id
+setCustomUserClaims user not found	Firebase user belum ada	createUser dulu, abaikan kalau ada
+2 proses Node.js rebutan port	lsnode (LiteSpeed) + node app.js manual	Kill lsnode lama, spawn manual 1x
+Compile Unresolved reference: await	Missing import	kotlinx.coroutines.tasks.await
+Compile Unresolved reference: AdminTextDark	Theme tidak punya constant	Ganti Color(0xFF111827)
+File Baru
+File	Fungsi
+FirebaseAuthHelper.kt	Login/logout Firebase Auth
+TripModels.kt	Data class Trip/Hotel/Room/dll
+TripRepository.kt	CRUD Firestore
+RoomAssignEngine.kt	Algoritma auto-assign
+TripListScreen.kt	UI list trip
+AddTripScreen.kt	UI form trip
+TripDetailScreen.kt	UI detail trip (hotel list)
+AddHotelScreen.kt	UI form hotel
+HotelRoomScreen.kt	UI list kamar
+GenerateRoomsScreen.kt	Flow 1 — Setup manual
+GenerateKamarAutoScreen.kt	Flow 2 — Auto generate
+RoomListPdfExporter.kt	Export PDF kamar
+File Dimodifikasi
+File	Perubahan
+build.gradle (root)	Plugin google-services 4.4.2
+app/build.gradle	Firebase BOM + Firestore + Auth
+AndroidManifest.xml	+ FileProvider
+AdminApi.kt	+ firebaseAdminToken endpoint
+LoginScreen.kt	+ wire Firebase login
+SayaScreen.kt	+ wire Firebase logout
+MainActivity.kt	+ tab Trip + state editingTrip/editingHotel/generateMode
+google-services.json	Baru (package admin)
+res/xml/file_paths.xml	Baru (FileProvider config)
+Commit Log
+ce3906f (jamaah) feat(auth): Firebase Custom Auth (A2) — login/logout + endpoint firebaseToken
+
+51cb798 feat(admin-D3): hilangkan lantai + edit/hapus trip & hotel
+
+9c7e5c8 feat(admin-D3-flow2): auto-generate kamar dari input pax (quad→triple→double→single, tanpa quint)
+
+(latest) feat(admin-D3): warna beda L/P + tombol BATAL/SIMPAN/HAPUS + sortir kamar + hapus AutoAssign FAB
+
+Kandidat TAHAP 25
+D2 Manifest Real-time — auto-populate jamaah dari WP (mapping jamaah_id → manifest)
+
+D1 Planning Trip — Gantt chart timeline pre-departure
+
+D4 Visa Tracking — status per jamaah (submitted/approved/ready)
+
+D5 Dokumen Tersentral — paspor, KTP, KK, vaksin di Firebase Storage
+
+Drag & drop editor untuk auto-assign manual adjustment
+
+PDF Export Manifest — selain room list
