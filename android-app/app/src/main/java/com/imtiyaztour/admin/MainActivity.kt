@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Radio
@@ -47,6 +48,14 @@ fun AdminApp() {
     var editingJamaah by remember { mutableStateOf<JamaahSummary?>(null) }
     var showAddJamaah by remember { mutableStateOf(false) }
 
+    // Fase 3 D3: navigasi trip
+    var selectedTrip by remember { mutableStateOf<Trip?>(null) }
+    var showAddTrip by remember { mutableStateOf(false) }
+    var selectedHotel by remember { mutableStateOf<Hotel?>(null) }
+    var showAddHotel by remember { mutableStateOf(false) }
+    var showGenerateRooms by remember { mutableStateOf(false) }
+    var showAutoAssign by remember { mutableStateOf(false) }
+
     if (!isLoggedIn) {
         LoginScreen(onLoggedIn = { isLoggedIn = true; selectedTab = 0 })
         return
@@ -59,6 +68,7 @@ fun AdminApp() {
     val tabs: List<AdminTab> = when (role) {
         "super_admin" -> listOf(
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
+            AdminTab("trip", "Trip", Icons.Default.DateRange),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
             AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
@@ -81,6 +91,7 @@ fun AdminApp() {
         )
         else -> listOf( // admin (default)
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
+            AdminTab("trip", "Trip", Icons.Default.DateRange),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
             AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
@@ -136,6 +147,51 @@ fun AdminApp() {
         Box(Modifier.padding(padding)) {
             when (currentTabKey) {
                 "dashboard" -> DashboardScreen()
+                "trip" -> {
+                    when {
+                        showAddTrip -> AddTripScreen(
+                            onBack = { showAddTrip = false },
+                            onSuccess = { showAddTrip = false }
+                        )
+                        showAutoAssign && selectedTrip != null && selectedHotel != null ->
+                            AutoAssignScreen(
+                                tripId = selectedTrip!!.id,
+                                hotelId = selectedHotel!!.id,
+                                onBack = { showAutoAssign = false },
+                                onSaved = { showAutoAssign = false }
+                            )
+                        showGenerateRooms && selectedTrip != null && selectedHotel != null ->
+                            GenerateRoomsScreen(
+                                tripId = selectedTrip!!.id,
+                                hotelId = selectedHotel!!.id,
+                                onBack = { showGenerateRooms = false },
+                                onSuccess = { showGenerateRooms = false }
+                            )
+                        showAddHotel && selectedTrip != null -> AddHotelScreen(
+                            tripId = selectedTrip!!.id,
+                            onBack = { showAddHotel = false },
+                            onSuccess = { showAddHotel = false }
+                        )
+                        selectedHotel != null -> HotelRoomScreen(
+                            tripId = selectedTrip!!.id,
+                            hotel = selectedHotel!!,
+                            onBack = { selectedHotel = null },
+                            onRoomClick = { /* TODO detail kamar */ },
+                            onGenerateRooms = { showGenerateRooms = true },
+                            onAutoAssign = { showAutoAssign = true }
+                        )
+                        selectedTrip != null -> TripDetailScreen(
+                            trip = selectedTrip!!,
+                            onBack = { selectedTrip = null },
+                            onHotelClick = { selectedHotel = it },
+                            onAddHotel = { showAddHotel = true }
+                        )
+                        else -> TripListScreen(
+                            onTripClick = { selectedTrip = it },
+                            onAddClick = { showAddTrip = true }
+                        )
+                    }
+                }
                 "jamaah" -> {
                     when {
                         showAddJamaah -> AddJamaahScreen(
