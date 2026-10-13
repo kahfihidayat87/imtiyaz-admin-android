@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,6 +48,22 @@ fun HotelRoomScreen(
     var editingRoom by remember { mutableStateOf<Room?>(null) }
     var isExporting by remember { mutableStateOf(false) }
     var showModeSheet by remember { mutableStateOf(false) }
+    var sortMode by remember { mutableStateOf("nomor") }  // nomor | tipe | L | P
+    var showSortSheet by remember { mutableStateOf(false) }
+
+    // Terapkan sortir
+    val sortedRooms = remember(rooms, sortMode) {
+        when (sortMode) {
+            "tipe" -> rooms.sortedWith(compareBy(
+                { tipeOrder(it.tipe) }, { it.nomor }
+            ))
+            "L" -> rooms.filter { it.gender_lock == "L" || it.penghuni.any { p -> p.gender == "L" } }
+                .sortedBy { it.nomor }
+            "P" -> rooms.filter { it.gender_lock == "P" || it.penghuni.any { p -> p.gender == "P" } }
+                .sortedBy { it.nomor }
+            else -> rooms.sortedBy { it.nomor }
+        }
+    }
 
     LaunchedEffect(tripId) {
         trip = withContext(Dispatchers.IO) { TripRepository.getTrip(tripId) }
@@ -111,11 +128,11 @@ fun HotelRoomScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (rooms.isNotEmpty()) {
                     ExtendedFloatingActionButton(
-                        onClick = onAutoAssign,
-                        containerColor = Color(0xFF29B6F6),
+                        onClick = { showSortSheet = true },
+                        containerColor = Color(0xFF6B7280),
                         contentColor = Color.White,
-                        icon = { Text("⚡", fontSize = 16.sp) },
-                        text = { Text("Auto-Assign", fontWeight = FontWeight.Bold) }
+                        icon = { Text("⇅", fontSize = 16.sp) },
+                        text = { Text("Sortir", fontWeight = FontWeight.Bold) }
                     )
                 }
                 FloatingActionButton(
@@ -142,10 +159,58 @@ fun HotelRoomScreen(
                 Modifier.padding(padding).fillMaxSize().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(rooms, key = { it.id }) { room ->
+                items(sortedRooms, key = { it.id }) { room ->
                     RoomCard(room, onClick = { editingRoom = room })
                 }
                 item { Spacer(Modifier.height(120.dp)) }
+            }
+        }
+    }
+
+    if (showSortSheet) {
+        ModalBottomSheet(onDismissRequest = { showSortSheet = false }) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Sortir / Filter Kamar", fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp, color = AdminPrimary)
+                Spacer(Modifier.height(12.dp))
+
+                val opts = listOf(
+                    Triple("nomor", "Nomor Kamar", "Urutkan sesuai nomor"),
+                    Triple("tipe", "Tipe Kamar", "Quad → Triple → Double → Single → Quint"),
+                    Triple("L", "Kamar Laki-laki", "Tampilkan hanya kamar L"),
+                    Triple("P", "Kamar Perempuan", "Tampilkan hanya kamar P"),
+                )
+                opts.forEach { (key, title, desc) ->
+                    val selected = sortMode == key
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                            .clickable {
+                                sortMode = key
+                                showSortSheet = false
+                            },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selected) Color(0xFFE8F5E9) else Color.White
+                        ),
+                        elevation = CardDefaults.cardElevation(1.dp)
+                    ) {
+                        Row(Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text(title, fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = if (selected) Color(0xFF0F7A5A) else Color(0xFF111827))
+                                Text(desc, fontSize = 11.sp, color = AdminTextGray)
+                            }
+                            if (selected) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null,
+                                    tint = Color(0xFF0F7A5A), modifier = Modifier.size(20.dp))
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
             }
         }
     }
@@ -208,6 +273,7 @@ fun HotelRoomScreen(
     }
 
     editingRoom?.let { room ->
+        var showDeleteConfirm by remember { mutableStateOf(false) }
         RoomDetailDialog(
             room = room,
             onDismiss = { editingRoom = null },
@@ -225,8 +291,35 @@ fun HotelRoomScreen(
                         Toast.makeText(context, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
-            }
+            },
+            onDelete = { showDeleteConfirm = true }
         )
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text("Hapus Kamar?") },
+                text = { Text("Kamar ${room.nomor} beserta semua penghuninya akan dihapus.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showDeleteConfirm = false
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    TripRepository.deleteRoom(tripId, hotel.id, room.id)
+                                }
+                                editingRoom = null
+                                Toast.makeText(context, "Kamar dihapus", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }) { Text("Hapus", color = AdminDanger, fontWeight = FontWeight.Bold) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirm = false }) { Text("Batal") }
+                }
+            )
+        }
     }
 }
 
@@ -234,7 +327,8 @@ fun HotelRoomScreen(
 private fun RoomDetailDialog(
     room: Room,
     onDismiss: () -> Unit,
-    onSave: (newNomor: String, newPenghuni: List<Penghuni>) -> Unit
+    onSave: (newNomor: String, newPenghuni: List<Penghuni>) -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     var nomor by remember { mutableStateOf(room.nomor) }
     val penghuniState = remember {
@@ -301,7 +395,7 @@ private fun RoomDetailDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f).height(46.dp),
                         shape = RoundedCornerShape(10.dp)
-                    ) { Text("Batal") }
+                    ) { Text("BATAL", fontWeight = FontWeight.Bold, fontSize = 12.sp) }
                     Button(
                         onClick = {
                             val cleanNomor = nomor.trim()
@@ -310,10 +404,17 @@ private fun RoomDetailDialog(
                             }
                         },
                         enabled = nomor.isNotBlank(),
-                        modifier = Modifier.weight(2f).height(46.dp),
+                        modifier = Modifier.weight(1.5f).height(46.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = AdminPrimary),
                         shape = RoundedCornerShape(10.dp)
-                    ) { Text("Simpan", fontWeight = FontWeight.Bold, color = Color.White) }
+                    ) { Text("SIMPAN", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 12.sp) }
+                    OutlinedButton(
+                        onClick = onDelete,
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AdminDanger),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AdminDanger)
+                    ) { Text("HAPUS", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = AdminDanger) }
                 }
             }
         }
@@ -324,34 +425,54 @@ private fun RoomDetailDialog(
 private fun RoomCard(room: Room, onClick: () -> Unit) {
     val occupied = room.penghuni.size
     val full = occupied >= room.kapasitas
-    val bgColor = when {
-        occupied == 0 -> Color.White
-        full -> Color(0xFFE8F5E9)
-        else -> Color(0xFFFFF8E1)
+
+    // Deteksi gender kamar
+    val gender = room.gender_lock
+        ?: room.penghuni.firstOrNull()?.gender
+
+    val (bgColor, accentColor, genderLabel) = when (gender) {
+        "L" -> Triple(Color(0xFFE3F2FD), Color(0xFF1976D2), "♂ LAKI-LAKI")
+        "P" -> Triple(Color(0xFFFCE4EC), Color(0xFFC2185B), "♀ PEREMPUAN")
+        else -> Triple(Color(0xFFF3F4F6), Color(0xFF6B7280), "— KOSONG")
     }
+
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = bgColor),
-        elevation = CardDefaults.cardElevation(1.dp)
+        elevation = CardDefaults.cardElevation(1.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, accentColor.copy(alpha = 0.3f))
     ) {
         Column(Modifier.padding(12.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Kamar ${room.nomor}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("Kamar ${room.nomor}", fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                    color = accentColor)
                 Text("${occupied}/${room.kapasitas}",
                     fontSize = 12.sp,
-                    color = if (full) Color(0xFF0F7A5A) else AdminTextGray,
+                    color = if (full) accentColor else AdminTextGray,
                     fontWeight = FontWeight.Bold)
             }
-            Text(room.tipe + (room.gender_lock?.let { " · $it" } ?: ""),
-                fontSize = 11.sp, color = AdminTextGray)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(room.tipe, fontSize = 11.sp, color = AdminTextGray)
+                Text(genderLabel, fontSize = 10.sp, color = accentColor, fontWeight = FontWeight.Bold)
+            }
             if (room.penghuni.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
                 room.penghuni.forEach { p ->
-                    Text("• ${p.nama} (${p.usia} th, ${p.gender})",
+                    Text("• ${p.nama}",
                         fontSize = 11.sp, color = Color.DarkGray)
                 }
             }
         }
     }
+}
+
+/** Urutan tipe untuk sorting */
+internal fun tipeOrder(tipe: String): Int = when (tipe.lowercase()) {
+    "quad" -> 1
+    "triple" -> 2
+    "double" -> 3
+    "single" -> 4
+    "quint" -> 5
+    else -> 99
 }
