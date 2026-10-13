@@ -18,11 +18,14 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.tasks.await
 
 /**
- * Fase 3 D3 (rev2): Generate kamar berdasarkan JUMLAH KAMAR (bukan lantai).
- * Tipe: single (1) · double (2) · triple (3) · quad (4) · quint (5)
- * Lantai + nomor kamar auto-distribute berdasarkan "kamar per lantai".
+ * Fase 3 D3 rev3: Setup Kamar & Jamaah terintegrasi.
+ * Admin input:
+ *   1. Jumlah jamaah (L / P)
+ *   2. Jumlah kamar per tipe (quint/quad/triple/double/single)
+ * Klik Generate → kamar dibuat + jamaah placeholder di-assign otomatis.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,26 +36,38 @@ fun GenerateRoomsScreen(
     onSuccess: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var tipe by remember { mutableStateOf("double") }
-    var genderLock by remember { mutableStateOf<String?>(null) }
-    var jumlahKamar by remember { mutableStateOf("") }
-    var kamarPerLantai by remember { mutableStateOf("10") }
+
+    // Jamaah
+    var paxL by remember { mutableStateOf("") }
+    var paxP by remember { mutableStateOf("") }
+
+    // Kamar
+    var quint by remember { mutableStateOf("") }
+    var quad by remember { mutableStateOf("") }
+    var triple by remember { mutableStateOf("") }
+    var double by remember { mutableStateOf("") }
+    var single by remember { mutableStateOf("") }
+
     var isLoading by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf("") }
 
-    val tipeList = listOf("single", "double", "triple", "quad", "quint")
-    val totalKamar = jumlahKamar.toIntOrNull() ?: 0
-    val kpl = kamarPerLantai.toIntOrNull() ?: 10
-    val kapasitas = roomCapacityFor(tipe)
-    val lantaiCount = if (kpl > 0 && totalKamar > 0) {
-        (totalKamar + kpl - 1) / kpl
-    } else 0
-    val totalPax = totalKamar * kapasitas
+    val nPaxL = paxL.toIntOrNull() ?: 0
+    val nPaxP = paxP.toIntOrNull() ?: 0
+    val totalPax = nPaxL + nPaxP
+
+    val nQuint = quint.toIntOrNull() ?: 0
+    val nQuad = quad.toIntOrNull() ?: 0
+    val nTriple = triple.toIntOrNull() ?: 0
+    val nDouble = double.toIntOrNull() ?: 0
+    val nSingle = single.toIntOrNull() ?: 0
+
+    val totalKamar = nQuint + nQuad + nTriple + nDouble + nSingle
+    val totalKapasitas = nQuint * 5 + nQuad * 4 + nTriple * 3 + nDouble * 2 + nSingle * 1
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Generate Kamar", fontWeight = FontWeight.Bold, color = AdminPrimary) },
+                title = { Text("Setup Kamar & Jamaah", fontWeight = FontWeight.Bold, color = AdminPrimary) },
                 navigationIcon = { IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = AdminPrimary)
                 } },
@@ -63,87 +78,64 @@ fun GenerateRoomsScreen(
         Column(
             Modifier.padding(padding).padding(16.dp).verticalScroll(rememberScrollState())
         ) {
-            // ============ TIPE KAMAR ============
-            Text("Tipe Kamar", fontSize = 12.sp, color = AdminTextGray)
+            // ==================== JAMAAH ====================
+            Text("Jumlah Jamaah", fontWeight = FontWeight.Bold, color = AdminPrimary, fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = paxL,
+                    onValueChange = { paxL = it.filter { c -> c.isDigit() } },
+                    label = { Text("Laki-laki (pax)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp), singleLine = true
+                )
+                Spacer(Modifier.width(8.dp))
+                OutlinedTextField(
+                    value = paxP,
+                    onValueChange = { paxP = it.filter { c -> c.isDigit() } },
+                    label = { Text("Perempuan (pax)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(10.dp), singleLine = true
+                )
+            }
             Spacer(Modifier.height(6.dp))
-            // Row 1: single, double, triple
-            Row {
-                tipeList.take(3).forEach { t ->
-                    FilterChip(
-                        selected = tipe == t,
-                        onClick = { tipe = t },
-                        label = { Text("$t (${roomCapacityFor(t)})", fontSize = 11.sp) },
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-            // Row 2: quad, quint
-            Row {
-                tipeList.drop(3).forEach { t ->
-                    FilterChip(
-                        selected = tipe == t,
-                        onClick = { tipe = t },
-                        label = { Text("$t (${roomCapacityFor(t)})", fontSize = 11.sp) },
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
-                }
-            }
+            Text("Total: $totalPax pax", fontSize = 12.sp, color = AdminTextGray)
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(20.dp))
 
-            // ============ GENDER ============
-            Text("Gender Kamar", fontSize = 12.sp, color = AdminTextGray)
-            Spacer(Modifier.height(6.dp))
-            Row {
-                listOf(null to "Mixed", "L" to "Pria", "P" to "Wanita").forEach { (g, label) ->
-                    FilterChip(
-                        selected = genderLock == g,
-                        onClick = { genderLock = g },
-                        label = { Text(label, fontSize = 11.sp) },
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
-                }
-            }
+            // ==================== KAMAR ====================
+            Text("Jumlah Kamar Dipesan", fontWeight = FontWeight.Bold, color = AdminPrimary, fontSize = 14.sp)
+            Spacer(Modifier.height(8.dp))
 
-            Spacer(Modifier.height(16.dp))
+            RoomInputRow("Quint (5 pax)", quint, { quint = it })
+            RoomInputRow("Quad (4 pax)", quad, { quad = it })
+            RoomInputRow("Triple (3 pax)", triple, { triple = it })
+            RoomInputRow("Double (2 pax)", double, { double = it })
+            RoomInputRow("Single (1 pax)", single, { single = it })
 
-            // ============ JUMLAH KAMAR ============
-            OutlinedTextField(
-                value = jumlahKamar,
-                onValueChange = { jumlahKamar = it.filter { c -> c.isDigit() } },
-                label = { Text("Jumlah Kamar *") },
-                placeholder = { Text("misal: 30") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp), singleLine = true
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = kamarPerLantai,
-                onValueChange = { kamarPerLantai = it.filter { c -> c.isDigit() } },
-                label = { Text("Kamar per Lantai") },
-                placeholder = { Text("default 10") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp), singleLine = true
-            )
+            Spacer(Modifier.height(8.dp))
+            Text("Total: $totalKamar kamar · kapasitas $totalKapasitas pax",
+                fontSize = 12.sp, color = AdminTextGray)
 
-            // ============ PREVIEW ============
-            if (totalKamar > 0) {
+            // ==================== PREVIEW ====================
+            if (totalPax > 0 && totalKamar > 0) {
                 Spacer(Modifier.height(16.dp))
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))) {
+                val sisa = totalKapasitas - totalPax
+                val cukup = sisa >= 0
+                Card(colors = CardDefaults.cardColors(
+                    containerColor = if (cukup) Color(0xFFE8F5E9) else Color(0xFFFFEBEE)
+                )) {
                     Column(Modifier.padding(12.dp)) {
-                        Text("Preview", fontWeight = FontWeight.Bold, color = Color(0xFF1565C0), fontSize = 13.sp)
+                        Text(if (cukup) "✓ Kapasitas cukup" else "✗ Kapasitas kurang",
+                            fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                            color = if (cukup) Color(0xFF0F7A5A) else AdminDanger)
                         Spacer(Modifier.height(4.dp))
-                        Text("• $totalKamar kamar $tipe ($kapasitas org/kamar)",
-                            fontSize = 12.sp, color = Color(0xFF1565C0))
-                        Text("• Total kapasitas: $totalPax orang",
-                            fontSize = 12.sp, color = Color(0xFF1565C0))
-                        Text("• Auto-distribute ke $lantaiCount lantai ($kpl kamar/lantai)",
-                            fontSize = 12.sp, color = Color(0xFF1565C0))
-                        Text("• Nomor: ${if (lantaiCount > 0) "101-" + (100 + kpl) else "-"} → ${lantaiCount}01-${lantaiCount}${kpl.toString().padStart(2, '0')}",
-                            fontSize = 11.sp, color = Color(0xFF1976D2))
+                        Text("• Total pax: $totalPax (L: $nPaxL, P: $nPaxP)", fontSize = 12.sp)
+                        Text("• Kapasitas: $totalKapasitas pax", fontSize = 12.sp)
+                        Text("• Sisa kursi: $sisa", fontSize = 12.sp,
+                            color = if (cukup) Color(0xFF0F7A5A) else AdminDanger)
                     }
                 }
             }
@@ -156,34 +148,118 @@ fun GenerateRoomsScreen(
             Spacer(Modifier.height(20.dp))
             Button(
                 onClick = {
+                    if (totalPax < 1) { errorMsg = "Jumlah jamaah wajib diisi"; return@Button }
                     if (totalKamar < 1) { errorMsg = "Jumlah kamar wajib diisi"; return@Button }
-                    if (totalKamar > 200) { errorMsg = "Maksimal 200 kamar sekali generate"; return@Button }
-                    if (kpl < 1) { errorMsg = "Kamar per lantai minimal 1"; return@Button }
+                    if (totalKapasitas < totalPax) {
+                        errorMsg = "Kapasitas kurang ${totalPax - totalKapasitas} pax"; return@Button
+                    }
+                    if (totalKamar > 300) { errorMsg = "Maksimal 300 kamar"; return@Button }
 
                     isLoading = true; errorMsg = ""
                     scope.launch {
                         try {
-                            val rooms = mutableListOf<Room>()
+                            // 1. Generate room list (dari besar ke kecil, tapi order di Firestore bebas)
+                            val newRooms = mutableListOf<Room>()
                             var lantai = 1
-                            var indexDiLantai = 1
-                            for (i in 1..totalKamar) {
-                                val nomor = "${lantai}${indexDiLantai.toString().padStart(2, '0')}"
-                                rooms.add(Room(
-                                    nomor = nomor,
-                                    lantai = lantai,
-                                    tipe = tipe,
-                                    kapasitas = kapasitas,
-                                    gender_lock = genderLock
-                                ))
-                                indexDiLantai++
-                                if (indexDiLantai > kpl) {
-                                    lantai++
-                                    indexDiLantai = 1
+                            var idxLantai = 1
+                            val kpl = 10  // fixed 10 kamar/lantai
+                            fun addRooms(tipe: String, count: Int) {
+                                repeat(count) {
+                                    val nomor = "${lantai}${idxLantai.toString().padStart(2, '0')}"
+                                    newRooms.add(Room(
+                                        nomor = nomor, lantai = lantai,
+                                        tipe = tipe, kapasitas = roomCapacityFor(tipe)
+                                    ))
+                                    idxLantai++
+                                    if (idxLantai > kpl) { lantai++; idxLantai = 1 }
                                 }
                             }
-                            withContext(Dispatchers.IO) {
-                                TripRepository.addRoomsBatch(tripId, hotelId, rooms)
+                            addRooms("quint", nQuint)
+                            addRooms("quad", nQuad)
+                            addRooms("triple", nTriple)
+                            addRooms("double", nDouble)
+                            addRooms("single", nSingle)
+
+                            // 2. Simpan rooms ke Firestore, dapatkan list dengan ID
+                            val savedRooms = withContext(Dispatchers.IO) {
+                                val col = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                    .collection("trips").document(tripId)
+                                    .collection("hotels").document(hotelId)
+                                    .collection("rooms")
+                                val result = mutableListOf<Room>()
+                                // batch
+                                val batch = com.google.firebase.firestore.FirebaseFirestore.getInstance().batch()
+                                newRooms.forEach { r ->
+                                    val ref = col.document()
+                                    batch.set(ref, mapOf(
+                                        "nomor" to r.nomor, "lantai" to r.lantai,
+                                        "tipe" to r.tipe, "kapasitas" to r.kapasitas,
+                                        "gender_lock" to null, "kategori_prioritas" to null,
+                                        "fasilitas" to emptyList<String>(),
+                                        "penghuni" to emptyList<Map<String, Any>>()
+                                    ))
+                                    result.add(r.copy(id = ref.id))
+                                }
+                                batch.commit().await()
+                                result
                             }
+
+                            // 3. Auto-assign
+                            val (assignMap, warnings) = RoomAssignEngine.assignByCount(
+                                paxL = nPaxL, paxP = nPaxP, rooms = savedRooms
+                            )
+
+                            // 4. Simpan assignment ke Firestore (batch) + simpan manifest placeholder
+                            withContext(Dispatchers.IO) {
+                                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                                val roomsCol = db.collection("trips").document(tripId)
+                                    .collection("hotels").document(hotelId).collection("rooms")
+                                val manifestCol = db.collection("trips").document(tripId)
+                                    .collection("manifest")
+                                val batch = db.batch()
+
+                                // Update penghuni per kamar
+                                assignMap.forEach { (roomId, list) ->
+                                    val data = list.map {
+                                        mapOf(
+                                            "jamaah_id" to it.id, "nama" to it.nama,
+                                            "usia" to it.usia, "gender" to it.gender
+                                        )
+                                    }
+                                    batch.set(roomsCol.document(roomId),
+                                        mapOf("penghuni" to data),
+                                        com.google.firebase.firestore.SetOptions.merge())
+                                }
+
+                                // Manifest placeholder
+                                assignMap.values.flatten().forEach { j ->
+                                    batch.set(manifestCol.document(j.id), mapOf(
+                                        "nama" to j.nama, "usia" to j.usia,
+                                        "gender" to j.gender,
+                                        "keluarga_group" to j.keluarga_group,
+                                        "kebutuhan_khusus" to emptyList<String>(),
+                                        "pembayaran_status" to "cicilan",
+                                        "sisa_bayar" to 0
+                                    ))
+                                }
+
+                                // Update trip jumlah_jamaah
+                                val tripRef = db.collection("trips").document(tripId)
+                                batch.set(tripRef, mapOf(
+                                    "jumlah_jamaah" to totalPax,
+                                    "updated_at" to System.currentTimeMillis()
+                                ), com.google.firebase.firestore.SetOptions.merge())
+
+                                batch.commit().await()
+                            }
+
+                            // 5. Warning kalau ada
+                            if (warnings.isNotEmpty()) {
+                                errorMsg = warnings.joinToString("; ") { it.message }
+                                isLoading = false
+                                return@launch
+                            }
+
                             onSuccess()
                         } catch (e: Exception) {
                             errorMsg = "Gagal: ${e.message ?: "unknown"}"
@@ -191,19 +267,32 @@ fun GenerateRoomsScreen(
                         isLoading = false
                     }
                 },
-                enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                enabled = !isLoading && totalPax > 0 && totalKamar > 0,
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AdminPrimary),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp),
                     color = Color.White, strokeWidth = 2.dp)
-                else Text(
-                    if (totalKamar > 0) "Generate $totalKamar Kamar" else "Generate Kamar",
-                    fontWeight = FontWeight.Bold, color = Color.White
-                )
+                else Text("Generate $totalKamar Kamar & Assign $totalPax Pax",
+                    fontWeight = FontWeight.Bold, color = Color.White, fontSize = 13.sp)
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+@Composable
+private fun RoomInputRow(label: String, value: String, onChange: (String) -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+        Text(label, fontSize = 13.sp, modifier = Modifier.weight(1f))
+        OutlinedTextField(
+            value = value, onValueChange = { onChange(it.filter { c -> c.isDigit() }) },
+            placeholder = { Text("0", fontSize = 12.sp) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.width(90.dp),
+            shape = RoundedCornerShape(8.dp), singleLine = true,
+            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp)
+        )
     }
 }

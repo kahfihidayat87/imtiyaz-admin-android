@@ -135,6 +135,96 @@ object RoomAssignEngine {
         )
     }
 
+    /**
+     * Fase 3 D3 rev3: Assign berdasarkan JUMLAH pax per gender + daftar kamar yang dipesan.
+     * Jamaah dibuat sebagai placeholder (id="jamaah_L_1", nama="Jamaah L-1").
+     *
+     * Aturan:
+     *  - Kamar diurut dari kapasitas TERBESAR ke terkecil
+     *  - Setiap kamar dialokasikan ke gender yang proporsi keterisiannya paling tertinggal (fair)
+     *  - 1 kamar = 1 gender (tidak boleh mixed)
+     *  - Kalau kapasitas kurang → warning
+     */
+    fun assignByCount(
+        paxL: Int,
+        paxP: Int,
+        rooms: List<Room>
+    ): Pair<Map<String, List<JamaahManifest>>, List<AssignWarning>> {
+        val assignment = mutableMapOf<String, MutableList<JamaahManifest>>()
+        rooms.forEach { assignment[it.id] = mutableListOf() }
+        val warnings = mutableListOf<AssignWarning>()
+
+        val totalKapasitas = rooms.sumOf { it.kapasitas }
+        val totalPax = paxL + paxP
+        if (totalKapasitas < totalPax) {
+            warnings.add(AssignWarning(
+                type = "over_capacity",
+                message = "Kapasitas kurang: butuh $totalPax, tersedia $totalKapasitas"
+            ))
+        }
+        if (paxL < 0 || paxP < 0) {
+            warnings.add(AssignWarning(type = "invalid", message = "Jumlah pax tidak valid"))
+            return assignment to warnings
+        }
+
+        // Sort kamar dari TERBESAR → terkecil
+        val sortedRooms = rooms.sortedByDescending { it.kapasitas }
+
+        var filledL = 0
+        var filledP = 0
+        var idxL = 0
+        var idxP = 0
+
+        for (room in sortedRooms) {
+            val deficitL = paxL - filledL
+            val deficitP = paxP - filledP
+            if (deficitL <= 0 && deficitP <= 0) break
+
+            // Pilih gender: yang proporsi keterisiannya paling tertinggal
+            val gender = when {
+                deficitL <= 0 -> "P"
+                deficitP <= 0 -> "L"
+                paxL == 0 -> "P"
+                paxP == 0 -> "L"
+                // proporsi terisi: filled/total. Ambil yang proporsinya LEBIH KECIL (paling tertinggal)
+                (filledL.toDouble() / paxL) <= (filledP.toDouble() / paxP) -> "L"
+                else -> "P"
+            }
+
+            val deficit = if (gender == "L") deficitL else deficitP
+            val n = minOf(room.kapasitas, deficit)
+
+            repeat(n) { i ->
+                val jid = if (gender == "L") { idxL++; "jamaah_L_$idxL" }
+                          else { idxP++; "jamaah_P_$idxP" }
+                val j = JamaahManifest(
+                    id = jid,
+                    nama = "Jamaah $gender-${if (gender == "L") idxL else idxP}",
+                    usia = 0,
+                    gender = gender,
+                    keluarga_group = jid
+                )
+                assignment[room.id]?.add(j)
+            }
+
+            if (gender == "L") filledL += n else filledP += n
+        }
+
+        if (filledL < paxL) {
+            warnings.add(AssignWarning(
+                type = "no_room", message = "${paxL - filledL} jamaah L belum dapat kamar"
+            ))
+        }
+        if (filledP < paxP) {
+            warnings.add(AssignWarning(
+                type = "no_room", message = "${paxP - filledP} jamaah P belum dapat kamar"
+            ))
+        }
+
+        Log.d(TAG, "assignByCount: L=$filledL/$paxL P=$filledP/$paxP rooms=${rooms.size}")
+        return assignment to warnings
+    }
+
     // ============ HELPERS ============
 
     private fun isAssigned(assignment: Map<String, MutableList<JamaahManifest>>, jamaahId: String): Boolean =

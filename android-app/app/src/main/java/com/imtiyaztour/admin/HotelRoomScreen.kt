@@ -75,7 +75,7 @@ fun HotelRoomScreen(
             ) {
                 Text("Belum ada kamar", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(Modifier.height(4.dp))
-                Text("Tap + untuk generate kamar", fontSize = 12.sp, color = AdminTextGray)
+                Text("Tap + untuk setup kamar & jamaah", fontSize = 12.sp, color = AdminTextGray)
             }
         } else {
             LazyColumn(
