@@ -226,7 +226,7 @@ private fun RoomAssignCard(room: Room, penghuni: List<JamaahManifest>) {
                     fontSize = 12.sp, fontWeight = FontWeight.Bold,
                     color = if (occupied >= room.kapasitas) Color(0xFF0F7A5A) else AdminTextGray)
             }
-            Text("Lantai ${room.lantai}" + (room.gender_lock?.let { " · $it" } ?: ""),
+            Text(room.tipe + (room.gender_lock?.let { " · $it" } ?: ""),
                 fontSize = 10.sp, color = AdminTextGray)
             if (penghuni.isEmpty()) {
                 Spacer(Modifier.height(4.dp))

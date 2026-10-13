@@ -22,19 +22,21 @@ import kotlinx.coroutines.withContext
 fun AddHotelScreen(
     tripId: String,
     onBack: () -> Unit,
-    onSuccess: () -> Unit
+    onSuccess: () -> Unit,
+    existingHotel: Hotel? = null
 ) {
     val scope = rememberCoroutineScope()
-    var nama by remember { mutableStateOf("") }
-    var tipe by remember { mutableStateOf("makkah") }
-    var jumlahLantai by remember { mutableStateOf("") }
+    val isEdit = existingHotel != null
+    var nama by remember { mutableStateOf(existingHotel?.nama ?: "") }
+    var tipe by remember { mutableStateOf(existingHotel?.tipe ?: "makkah") }
+    var jumlahLantai by remember { mutableStateOf(existingHotel?.jumlah_lantai?.toString() ?: "") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tambah Hotel", fontWeight = FontWeight.Bold, color = AdminPrimary) },
+                title = { Text(if (isEdit) "Edit Hotel" else "Tambah Hotel", fontWeight = FontWeight.Bold, color = AdminPrimary) },
                 navigationIcon = { IconButton(onClick = onBack) {
                     Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = AdminPrimary)
                 } },
@@ -82,11 +84,21 @@ fun AddHotelScreen(
                     isLoading = true; errorMsg = ""
                     scope.launch {
                         try {
-                            val h = Hotel(
-                                nama = nama.trim(), tipe = tipe,
-                                jumlah_lantai = jumlahLantai.toIntOrNull() ?: 0
-                            )
-                            withContext(Dispatchers.IO) { TripRepository.addHotel(tripId, h) }
+                            if (isEdit) {
+                                withContext(Dispatchers.IO) {
+                                    TripRepository.updateHotel(tripId, existingHotel!!.id, mapOf(
+                                        "nama" to nama.trim(),
+                                        "tipe" to tipe,
+                                        "jumlah_lantai" to (jumlahLantai.toIntOrNull() ?: 0)
+                                    ))
+                                }
+                            } else {
+                                val h = Hotel(
+                                    nama = nama.trim(), tipe = tipe,
+                                    jumlah_lantai = jumlahLantai.toIntOrNull() ?: 0
+                                )
+                                withContext(Dispatchers.IO) { TripRepository.addHotel(tripId, h) }
+                            }
                             onSuccess()
                         } catch (e: Exception) {
                             errorMsg = "Gagal simpan: ${e.message ?: "unknown"}"

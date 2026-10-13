@@ -114,8 +114,7 @@ private fun RoomCard(room: Room, onClick: () -> Unit) {
                     color = if (full) Color(0xFF0F7A5A) else AdminTextGray,
                     fontWeight = FontWeight.Bold)
             }
-            Text("Lantai ${room.lantai} · ${room.tipe}" +
-                    (room.gender_lock?.let { " · ${it}" } ?: ""),
+            Text(room.tipe + (room.gender_lock?.let { " · $it" } ?: ""),
                 fontSize = 11.sp, color = AdminTextGray)
             if (room.penghuni.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))

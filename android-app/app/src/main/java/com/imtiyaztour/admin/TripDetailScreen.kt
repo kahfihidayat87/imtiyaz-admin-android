@@ -8,10 +8,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,7 +34,8 @@ fun TripDetailScreen(
     trip: Trip,
     onBack: () -> Unit,
     onHotelClick: (Hotel) -> Unit,
-    onAddHotel: () -> Unit
+    onAddHotel: () -> Unit,
+    onEditHotel: (Hotel) -> Unit = {}
 ) {
     val hotels by TripRepository.observeHotels(trip.id)
         .collectAsState(initial = emptyList())
@@ -74,7 +81,7 @@ fun TripDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     items(hotels, key = { it.id }) { h ->
-                        HotelCard(h, onClick = { onHotelClick(h) })
+                        HotelCard(h, onClick = { onHotelClick(h) }, onEdit = { onEditHotel(h) }, tripId = trip.id)
                     }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
@@ -92,10 +99,13 @@ fun TripDetailScreen(
 }
 
 @Composable
-private fun HotelCard(h: Hotel, onClick: () -> Unit) {
+private fun HotelCard(h: Hotel, onClick: () -> Unit, onEdit: () -> Unit, tripId: String) {
     val sdf = SimpleDateFormat("dd MMM", Locale("id", "ID"))
     val checkin = if (h.checkin > 0) sdf.format(Date(h.checkin)) else "-"
     val checkout = if (h.checkout > 0) sdf.format(Date(h.checkout)) else "-"
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showConfirm by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
@@ -115,9 +125,40 @@ private fun HotelCard(h: Hotel, onClick: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(h.nama, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Text("$checkin — $checkout · ${h.jumlah_lantai} lantai",
-                    fontSize = 11.sp, color = AdminTextGray)
+                Text("$checkin — $checkout", fontSize = 11.sp, color = AdminTextGray)
+            }
+            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit",
+                    tint = AdminPrimary, modifier = Modifier.size(18.dp))
+            }
+            IconButton(onClick = { showConfirm = true }, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Delete, contentDescription = "Hapus",
+                    tint = AdminDanger, modifier = Modifier.size(18.dp))
             }
         }
+    }
+
+    if (showConfirm) {
+        AlertDialog(
+            onDismissRequest = { showConfirm = false },
+            title = { Text("Hapus Hotel?") },
+            text = { Text("Hotel \"${h.nama}\" beserta semua kamar akan dihapus.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showConfirm = false
+                    scope.launch {
+                        try {
+                            withContext(Dispatchers.IO) { TripRepository.deleteHotel(tripId, h.id) }
+                            android.widget.Toast.makeText(context, "Hotel dihapus", android.widget.Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "Gagal: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }) { Text("Hapus", color = AdminDanger, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirm = false }) { Text("Batal") }
+            }
+        )
     }
 }

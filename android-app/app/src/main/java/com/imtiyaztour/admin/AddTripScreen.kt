@@ -22,21 +22,23 @@ import kotlinx.coroutines.withContext
 @Composable
 fun AddTripScreen(
     onBack: () -> Unit,
-    onSuccess: (tripId: String) -> Unit
+    onSuccess: (tripId: String) -> Unit,
+    existingTrip: Trip? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var nama by remember { mutableStateOf("") }
-    var jumlahJamaah by remember { mutableStateOf("") }
-    var catatan by remember { mutableStateOf("") }
+    val isEdit = existingTrip != null
+    var nama by remember { mutableStateOf(existingTrip?.nama ?: "") }
+    var jumlahJamaah by remember { mutableStateOf(existingTrip?.jumlah_jamaah?.toString() ?: "") }
+    var catatan by remember { mutableStateOf(existingTrip?.catatan ?: "") }
     var isLoading by remember { mutableStateOf(false) }
     var errorMsg by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tambah Trip", fontWeight = FontWeight.Bold, color = AdminPrimary) },
+                title = { Text(if (isEdit) "Edit Trip" else "Tambah Trip", fontWeight = FontWeight.Bold, color = AdminPrimary) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = AdminPrimary)
@@ -80,14 +82,25 @@ fun AddTripScreen(
                     isLoading = true; errorMsg = ""
                     scope.launch {
                         try {
-                            val trip = Trip(
-                                nama = nama.trim(),
-                                jumlah_jamaah = jumlahJamaah.toIntOrNull() ?: 0,
-                                catatan = catatan.trim(),
-                                status = "planning"
-                            )
-                            val id = withContext(Dispatchers.IO) { TripRepository.createTrip(trip) }
-                            onSuccess(id)
+                            if (isEdit) {
+                                withContext(Dispatchers.IO) {
+                                    TripRepository.updateTrip(existingTrip!!.id, mapOf(
+                                        "nama" to nama.trim(),
+                                        "jumlah_jamaah" to (jumlahJamaah.toIntOrNull() ?: 0),
+                                        "catatan" to catatan.trim()
+                                    ))
+                                }
+                                onSuccess(existingTrip!!.id)
+                            } else {
+                                val trip = Trip(
+                                    nama = nama.trim(),
+                                    jumlah_jamaah = jumlahJamaah.toIntOrNull() ?: 0,
+                                    catatan = catatan.trim(),
+                                    status = "planning"
+                                )
+                                val id = withContext(Dispatchers.IO) { TripRepository.createTrip(trip) }
+                                onSuccess(id)
+                            }
                         } catch (e: Exception) {
                             errorMsg = "Gagal simpan: ${e.message ?: "unknown"}"
                         }

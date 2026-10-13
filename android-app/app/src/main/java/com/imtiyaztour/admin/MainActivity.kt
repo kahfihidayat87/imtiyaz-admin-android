@@ -51,6 +51,8 @@ fun AdminApp() {
     // Fase 3 D3: navigasi trip
     var selectedTrip by remember { mutableStateOf<Trip?>(null) }
     var showAddTrip by remember { mutableStateOf(false) }
+    var editingTrip by remember { mutableStateOf<Trip?>(null) }
+    var editingHotel by remember { mutableStateOf<Hotel?>(null) }
     var selectedHotel by remember { mutableStateOf<Hotel?>(null) }
     var showAddHotel by remember { mutableStateOf(false) }
     var showGenerateRooms by remember { mutableStateOf(false) }
@@ -150,8 +152,9 @@ fun AdminApp() {
                 "trip" -> {
                     when {
                         showAddTrip -> AddTripScreen(
-                            onBack = { showAddTrip = false },
-                            onSuccess = { showAddTrip = false }
+                            onBack = { showAddTrip = false; editingTrip = null },
+                            onSuccess = { showAddTrip = false; editingTrip = null },
+                            existingTrip = editingTrip
                         )
                         showAutoAssign && selectedTrip != null && selectedHotel != null ->
                             AutoAssignScreen(
@@ -169,8 +172,9 @@ fun AdminApp() {
                             )
                         showAddHotel && selectedTrip != null -> AddHotelScreen(
                             tripId = selectedTrip!!.id,
-                            onBack = { showAddHotel = false },
-                            onSuccess = { showAddHotel = false }
+                            onBack = { showAddHotel = false; editingHotel = null },
+                            onSuccess = { showAddHotel = false; editingHotel = null },
+                            existingHotel = editingHotel
                         )
                         selectedHotel != null -> HotelRoomScreen(
                             tripId = selectedTrip!!.id,
@@ -184,11 +188,13 @@ fun AdminApp() {
                             trip = selectedTrip!!,
                             onBack = { selectedTrip = null },
                             onHotelClick = { selectedHotel = it },
-                            onAddHotel = { showAddHotel = true }
+                            onAddHotel = { showAddHotel = true; editingHotel = null },
+                            onEditHotel = { editingHotel = it; showAddHotel = true }
                         )
                         else -> TripListScreen(
                             onTripClick = { selectedTrip = it },
-                            onAddClick = { showAddTrip = true }
+                            onAddClick = { showAddTrip = true; editingTrip = null },
+                            onEditTrip = { editingTrip = it; showAddTrip = true }
                         )
                     }
                 }
