@@ -1,11 +1,14 @@
 package com.imtiyaztour.admin
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -19,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -146,17 +150,19 @@ fun HotelRoomScreen(
     }
 
     editingRoom?.let { room ->
-        EditRoomNumberDialog(
+        RoomDetailDialog(
             room = room,
             onDismiss = { editingRoom = null },
-            onSave = { newNomor ->
+            onSave = { newNomor, newPenghuni ->
                 scope.launch {
                     try {
                         withContext(Dispatchers.IO) {
-                            TripRepository.updateRoomNumber(tripId, hotel.id, room.id, newNomor)
+                            TripRepository.updateRoomAndPenghuni(
+                                tripId, hotel.id, room.id, newNomor, newPenghuni
+                            )
                         }
                         editingRoom = null
-                        Toast.makeText(context, "Nomor kamar diubah", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Kamar disimpan", Toast.LENGTH_SHORT).show()
                     } catch (e: Exception) {
                         Toast.makeText(context, "Gagal: ${e.message}", Toast.LENGTH_LONG).show()
                     }
@@ -167,40 +173,93 @@ fun HotelRoomScreen(
 }
 
 @Composable
-private fun EditRoomNumberDialog(
+private fun RoomDetailDialog(
     room: Room,
     onDismiss: () -> Unit,
-    onSave: (String) -> Unit
+    onSave: (newNomor: String, newPenghuni: List<Penghuni>) -> Unit
 ) {
     var nomor by remember { mutableStateOf(room.nomor) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Edit Nomor Kamar") },
-        text = {
-            Column {
-                Text("Tipe: ${room.tipe} · Kapasitas: ${room.kapasitas} pax",
-                    fontSize = 12.sp, color = AdminTextGray)
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = nomor,
-                    onValueChange = { nomor = it },
-                    label = { Text("Nomor Kamar") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    singleLine = true
-                )
+    val penghuniState = remember {
+        mutableStateListOf<Penghuni>().apply { addAll(room.penghuni) }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = Color.White,
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(0.85f)
+        ) {
+            Column(Modifier.fillMaxSize()) {
+                Box(Modifier.fillMaxWidth().background(AdminPrimary).padding(16.dp)) {
+                    Column {
+                        Text("Kamar ${room.nomor}", color = Color.White,
+                            fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("${room.tipe} · ${room.penghuni.size}/${room.kapasitas} pax",
+                            color = Color.White.copy(alpha = 0.9f), fontSize = 11.sp)
+                    }
+                }
+
+                Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(16.dp)) {
+                    Text("Nomor Kamar", fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                        color = AdminPrimary)
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = nomor,
+                        onValueChange = { nomor = it },
+                        label = { Text("Nomor") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        singleLine = true
+                    )
+
+                    Spacer(Modifier.height(16.dp))
+                    Text("Penghuni", fontWeight = FontWeight.Bold, fontSize = 13.sp,
+                        color = AdminPrimary)
+                    Spacer(Modifier.height(6.dp))
+
+                    if (penghuniState.isEmpty()) {
+                        Text("(Kosong)", fontSize = 12.sp, color = AdminTextGray)
+                    } else {
+                        penghuniState.forEachIndexed { idx, p ->
+                            OutlinedTextField(
+                                value = p.nama,
+                                onValueChange = { newName ->
+                                    penghuniState[idx] = p.copy(nama = newName)
+                                },
+                                label = { Text("Penghuni ${idx + 1} (${p.gender})") },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                singleLine = true
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f).height(46.dp),
+                        shape = RoundedCornerShape(10.dp)
+                    ) { Text("Batal") }
+                    Button(
+                        onClick = {
+                            val cleanNomor = nomor.trim()
+                            if (cleanNomor.isNotBlank()) {
+                                onSave(cleanNomor, penghuniState.toList())
+                            }
+                        },
+                        enabled = nomor.isNotBlank(),
+                        modifier = Modifier.weight(2f).height(46.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AdminPrimary),
+                        shape = RoundedCornerShape(10.dp)
+                    ) { Text("Simpan", fontWeight = FontWeight.Bold, color = Color.White) }
+                }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (nomor.isNotBlank()) onSave(nomor.trim()) },
-                enabled = nomor.isNotBlank()
-            ) { Text("Simpan", color = AdminPrimary, fontWeight = FontWeight.Bold) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Batal") }
         }
-    )
+    }
 }
 
 @Composable

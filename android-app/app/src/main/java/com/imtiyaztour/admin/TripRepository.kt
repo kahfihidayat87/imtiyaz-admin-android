@@ -290,6 +290,31 @@ object TripRepository {
                 com.google.firebase.firestore.SetOptions.merge()).await()
     }
 
+    /** Update nomor + list penghuni sekaligus. Sync nama ke manifest. */
+    suspend fun updateRoomAndPenghuni(
+        tripId: String, hotelId: String, roomId: String,
+        newNomor: String, newPenghuni: List<Penghuni>
+    ) {
+        val batch = db.batch()
+        val roomsCol = tripsCol.document(tripId).collection("hotels").document(hotelId).collection("rooms")
+        val manifestCol = tripsCol.document(tripId).collection("manifest")
+
+        val data = newPenghuni.map {
+            mapOf("jamaah_id" to it.jamaah_id, "nama" to it.nama,
+                  "usia" to it.usia, "gender" to it.gender)
+        }
+        batch.set(roomsCol.document(roomId),
+            mapOf("nomor" to newNomor, "penghuni" to data),
+            com.google.firebase.firestore.SetOptions.merge())
+
+        newPenghuni.forEach { p ->
+            batch.set(manifestCol.document(p.jamaah_id),
+                mapOf("nama" to p.nama),
+                com.google.firebase.firestore.SetOptions.merge())
+        }
+        batch.commit().await()
+    }
+
     suspend fun deleteRoom(tripId: String, hotelId: String, roomId: String) {
         tripsCol.document(tripId).collection("hotels").document(hotelId)
             .collection("rooms").document(roomId).delete().await()
