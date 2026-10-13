@@ -34,7 +34,7 @@ fun HotelRoomScreen(
     hotel: Hotel,
     onBack: () -> Unit,
     onRoomClick: (Room) -> Unit,
-    onGenerateRooms: () -> Unit,
+    onGenerateRooms: (mode: String) -> Unit,
     onAutoAssign: () -> Unit
 ) {
     val context = LocalContext.current
@@ -46,6 +46,7 @@ fun HotelRoomScreen(
     var trip by remember { mutableStateOf<Trip?>(null) }
     var editingRoom by remember { mutableStateOf<Room?>(null) }
     var isExporting by remember { mutableStateOf(false) }
+    var showModeSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(tripId) {
         trip = withContext(Dispatchers.IO) { TripRepository.getTrip(tripId) }
@@ -118,7 +119,7 @@ fun HotelRoomScreen(
                     )
                 }
                 FloatingActionButton(
-                    onClick = onGenerateRooms,
+                    onClick = { showModeSheet = true },
                     containerColor = AdminPrimary
                 ) {
                     Icon(Icons.Default.Add, contentDescription = "Tambah Kamar", tint = Color.White)
@@ -145,6 +146,63 @@ fun HotelRoomScreen(
                     RoomCard(room, onClick = { editingRoom = room })
                 }
                 item { Spacer(Modifier.height(120.dp)) }
+            }
+        }
+    }
+
+    if (showModeSheet) {
+        ModalBottomSheet(onDismissRequest = { showModeSheet = false }) {
+            Column(Modifier.padding(20.dp)) {
+                Text("Pilih Mode Setup Kamar", fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp, color = AdminPrimary)
+                Spacer(Modifier.height(4.dp))
+                Text("Pilih cara generate kamar sesuai kebutuhan",
+                    fontSize = 12.sp, color = AdminTextGray)
+                Spacer(Modifier.height(16.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        showModeSheet = false
+                        onGenerateRooms("manual")
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("🛏", fontSize = 24.sp)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Setup Manual", fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp, color = Color(0xFF1565C0))
+                            Text("Input pax L/P + jumlah kamar per tipe (quint/quad/triple/double/single)",
+                                fontSize = 11.sp, color = Color(0xFF1565C0))
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        showModeSheet = false
+                        onGenerateRooms("auto")
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                ) {
+                    Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("⚡", fontSize = 24.sp)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("Auto Generate", fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp, color = Color(0xFF0F7A5A))
+                            Text("Input pax L/P saja — sistem hitung kebutuhan kamar (quad→triple→double→single)",
+                                fontSize = 11.sp, color = Color(0xFF0F7A5A))
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
             }
         }
     }

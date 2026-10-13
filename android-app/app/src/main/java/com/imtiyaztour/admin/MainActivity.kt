@@ -55,7 +55,7 @@ fun AdminApp() {
     var editingHotel by remember { mutableStateOf<Hotel?>(null) }
     var selectedHotel by remember { mutableStateOf<Hotel?>(null) }
     var showAddHotel by remember { mutableStateOf(false) }
-    var showGenerateRooms by remember { mutableStateOf(false) }
+    var generateMode by remember { mutableStateOf<String?>(null) }
     var showAutoAssign by remember { mutableStateOf(false) }
 
     if (!isLoggedIn) {
@@ -163,12 +163,19 @@ fun AdminApp() {
                                 onBack = { showAutoAssign = false },
                                 onSaved = { showAutoAssign = false }
                             )
-                        showGenerateRooms && selectedTrip != null && selectedHotel != null ->
+                        generateMode == "manual" && selectedTrip != null && selectedHotel != null ->
                             GenerateRoomsScreen(
                                 tripId = selectedTrip!!.id,
                                 hotelId = selectedHotel!!.id,
-                                onBack = { showGenerateRooms = false },
-                                onSuccess = { showGenerateRooms = false }
+                                onBack = { generateMode = null },
+                                onSuccess = { generateMode = null }
+                            )
+                        generateMode == "auto" && selectedTrip != null && selectedHotel != null ->
+                            GenerateKamarAutoScreen(
+                                tripId = selectedTrip!!.id,
+                                hotelId = selectedHotel!!.id,
+                                onBack = { generateMode = null },
+                                onSuccess = { generateMode = null }
                             )
                         showAddHotel && selectedTrip != null -> AddHotelScreen(
                             tripId = selectedTrip!!.id,
@@ -181,7 +188,7 @@ fun AdminApp() {
                             hotel = selectedHotel!!,
                             onBack = { selectedHotel = null },
                             onRoomClick = { /* TODO detail kamar */ },
-                            onGenerateRooms = { showGenerateRooms = true },
+                            onGenerateRooms = { mode -> generateMode = mode },
                             onAutoAssign = { showAutoAssign = true }
                         )
                         selectedTrip != null -> TripDetailScreen(
