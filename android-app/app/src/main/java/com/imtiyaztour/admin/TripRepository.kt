@@ -283,6 +283,18 @@ object TripRepository {
             .set(fields, com.google.firebase.firestore.SetOptions.merge()).await()
     }
 
+    suspend fun updateRoomNumber(tripId: String, hotelId: String, roomId: String, newNomor: String) {
+        tripsCol.document(tripId).collection("hotels").document(hotelId)
+            .collection("rooms").document(roomId)
+            .set(mapOf("nomor" to newNomor),
+                com.google.firebase.firestore.SetOptions.merge()).await()
+    }
+
+    suspend fun deleteRoom(tripId: String, hotelId: String, roomId: String) {
+        tripsCol.document(tripId).collection("hotels").document(hotelId)
+            .collection("rooms").document(roomId).delete().await()
+    }
+
     suspend fun deleteManifest(tripId: String, jamaahId: String) {
         tripsCol.document(tripId).collection("manifest").document(jamaahId).delete().await()
     }
