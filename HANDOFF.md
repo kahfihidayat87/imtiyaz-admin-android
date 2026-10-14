@@ -1,6 +1,6 @@
 # 🎯 HANDOFF — Imtiyaz Admin Android
 
-**Update terakhir:** 13 Okt 2026 (v1.2.0, TAHAP 24 SELESAI)
+**Update terakhir:** 14 Okt 2026 (v1.3.0, TAHAP 25 SELESAI)
 **Repo:** https://github.com/kahfihidayat87/imtiyaz-admin-android
 **Local:** `C:\Users\DELL\Documents\GitHub\imtiyaz-admin-android`
 
@@ -603,3 +603,57 @@ D5 Dokumen Tersentral — paspor, KTP, KK, vaksin di Firebase Storage
 Drag & drop editor untuk auto-assign manual adjustment
 
 PDF Export Manifest — selain room list
+
+---
+
+## TAHAP 25 — Server Sync + Gelombang Radio + Heartbeat Fix (14 Okt 2026)
+
+**Status:** ✅ Selesai (server-side, tidak ada perubahan UI/admin di repo ini)
+
+### Perubahan Server (`api.pastiumrah.com`)
+
+**Endpoint baru (`app.js`):**
+| Endpoint | Fungsi |
+|---|---|
+| `POST /api/radio/gelombang/create` | TL buat gelombang radio |
+| `POST /api/radio/gelombang/join` | Jamaah join via kode |
+| `POST /api/radio/gelombang/leave` | Jamaah keluar |
+| `POST /api/radio/gelombang/revoke` | TL akhiri gelombang |
+| `GET /api/radio/gelombang/info/:kode` | Preview info gelombang |
+
+**Modifikasi endpoint existing:**
+- `radio/send`, `radio/poll`, `radio/token` — support field `kode_gelombang`
+- Fallback ke `kanal_id` (backward compat)
+
+**Firestore:**
+- Collection baru `gelombang/{kode}` — metadata + daftar peserta
+- Rules: `read for signed-in, write via admin SDK` (client tidak bisa tulis langsung)
+
+**Debug log cleanup:**
+- Hapus verbose log `[Firebase Admin Token] req: ...` (hanya simpan log informatif: create user, role assignment, error)
+
+### Perubahan di Repo Jamaah (bukan repo ini)
+
+**Heartbeat workflow (`.github/workflows/heartbeat.yml`):**
+- Retry 3× dengan delay 10s antar percobaan
+- Timeout 30s → 60s
+- `--connect-timeout 15` + `--retry 2 --retry-delay 5`
+
+**Hasil:** Cron 6 jam berikutnya sukses (9s) — tidak ada lagi transient fail.
+
+### Catatan untuk App Admin
+
+**Gelombang radio** saat ini **dikelola dari app jamaah** (TL buat kode sendiri, share WA, jamaah join via kode). App admin **tidak perlu ikut campur** untuk fungsi dasar.
+
+**Kalau nanti perlu monitoring**, kandidat fitur admin:
+- Dashboard list gelombang aktif (kode, TL, peserta count)
+- Revoke gelombang paksa oleh admin
+- Log partisipasi per trip (audit)
+
+### Kandidat TAHAP 26
+
+- D2 Manifest Real-time (auto-populate dari WP)
+- D1 Planning Trip (Gantt chart)
+- D4 Visa Tracking (submitted/approved/ready)
+- Admin monitoring gelombang radio
+- Export PDF manifest trip
