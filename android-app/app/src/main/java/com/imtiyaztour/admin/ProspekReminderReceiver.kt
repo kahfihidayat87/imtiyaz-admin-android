@@ -2,6 +2,7 @@ package com.imtiyaztour.admin
 
 import android.content.BroadcastReceiver
 import android.content.Context
+import android.os.PowerManager
 import android.content.Intent
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,6 +13,10 @@ import kotlinx.coroutines.tasks.await
 
 class ProspekReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ProspekReminder::WakeLock")
+        wl.acquire(30_000L)
+        try {
         val prospekId = intent.getStringExtra("prospek_id") ?: return
         val nama = intent.getStringExtra("nama") ?: "Prospek"
         val pending = goAsync()
@@ -30,7 +35,11 @@ class ProspekReminderReceiver : BroadcastReceiver() {
                 ProspekNotificationHelper.showFuNotification(context, prospekId, nama)
             } finally {
                 pending.finish()
+                if (wl.isHeld) wl.release()
             }
+        }
+        } finally {
+            if (wl.isHeld) wl.release()
         }
     }
 }

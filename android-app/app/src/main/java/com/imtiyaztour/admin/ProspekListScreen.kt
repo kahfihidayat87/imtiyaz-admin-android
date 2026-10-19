@@ -9,6 +9,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +27,9 @@ import java.util.Locale
 @Composable
 fun ProspekListScreen(
     onAddClick: () -> Unit,
-    onProspekClick: (Prospek) -> Unit = {}
+    onProspekClick: (Prospek) -> Unit = {},
+    onEditClick: (Prospek) -> Unit = {},
+    onDeleteClick: (Prospek) -> Unit = {}
 ) {
     val all by ProspekRepository.observeAll().collectAsState(initial = emptyList())
     val now = System.currentTimeMillis()
@@ -54,11 +58,11 @@ fun ProspekListScreen(
             ) {
                 if (due.isNotEmpty()) {
                     item { SectionLabel("Jatuh Tempo Follow Up", Color(0xFFDC2626)) }
-                    items(due, key = { "d-${it.id}" }) { ProspekCard(it, true) { onProspekClick(it) } }
+                    items(due, key = { "d-${it.id}" }) { ProspekCard(it, true, { onProspekClick(it) }, { onEditClick(it) }, { onDeleteClick(it) }) }
                 }
                 if (rest.isNotEmpty()) {
                     item { SectionLabel("Semua Prospek", AdminText) }
-                    items(rest, key = { "a-${it.id}" }) { ProspekCard(it, false) { onProspekClick(it) } }
+                    items(rest, key = { "a-${it.id}" }) { ProspekCard(it, false, { onProspekClick(it) }, { onEditClick(it) }, { onDeleteClick(it) }) }
                 }
                 item { Spacer(Modifier.height(80.dp)) }
             }
@@ -81,7 +85,7 @@ private fun SectionLabel(text: String, color: Color) {
 }
 
 @Composable
-private fun ProspekCard(p: Prospek, highlight: Boolean, onClick: () -> Unit) {
+private fun ProspekCard(p: Prospek, highlight: Boolean, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     val (bc, bt) = when (p.statusEnum()) {
         ProspekStatus.BARU -> AdminTextGray to "Baru"
         ProspekStatus.FU_DIJADWALKAN -> AdminWarning to "FU ${formatTgl(p.fu_date)}"
@@ -112,6 +116,16 @@ private fun ProspekCard(p: Prospek, highlight: Boolean, onClick: () -> Unit) {
             if (p.catatan.isNotBlank()) {
                 Spacer(Modifier.height(4.dp))
                 Text(p.catatan, fontSize = 12.sp, color = AdminText, maxLines = 2)
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Prospek", tint = AdminPrimary)
+                }
+                Spacer(Modifier.width(4.dp))
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Delete, contentDescription = "Hapus Prospek", tint = Color(0xFFDC2626))
+                }
             }
         }
     }

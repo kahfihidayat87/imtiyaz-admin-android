@@ -28,18 +28,20 @@ import java.util.Locale
 @Composable
 fun AddProspekScreen(
     onBack: () -> Unit,
-    onSaved: () -> Unit = {}
+    onSaved: () -> Unit = {},
+    existingProspek: Prospek? = null
 ) {
     val scope = rememberCoroutineScope()
     val snack = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    var nama by remember { mutableStateOf("") }
-    var kota by remember { mutableStateOf("") }
-    var noWa by remember { mutableStateOf("") }
-    var umrahUntuk by remember { mutableStateOf(UmrahUntuk.DIRI_SENDIRI) }
-    var tglKantor by remember { mutableStateOf<Long?>(null) }
-    var catatan by remember { mutableStateOf("") }
+    val isEditing = existingProspek != null
+    var nama by remember { mutableStateOf(existingProspek?.nama ?: "") }
+    var kota by remember { mutableStateOf(existingProspek?.kota ?: "") }
+    var noWa by remember { mutableStateOf(existingProspek?.no_wa ?: "") }
+    var umrahUntuk by remember { mutableStateOf(existingProspek?.umrahUntukEnum() ?: UmrahUntuk.DIRI_SENDIRI) }
+    var tglKantor by remember { mutableStateOf<Long?>(existingProspek?.tgl_kantor) }
+    var catatan by remember { mutableStateOf(existingProspek?.catatan ?: "") }
 
     var expandedUmrah by remember { mutableStateOf(false) }
     var showDateKantor by remember { mutableStateOf(false) }
@@ -49,12 +51,12 @@ fun AddProspekScreen(
     var createdId by remember { mutableStateOf<String?>(null) }
     var fuSaved by remember { mutableStateOf(false) }
 
-    val readOnly = createdId != null
+    val readOnly = createdId != null && !isEditing
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (readOnly) "Detail Prospek" else "Tambah Prospek", fontSize = 17.sp) },
+                title = { Text(if (isEditing) "Edit Prospek" else if (readOnly) "Detail Prospek" else "Tambah Prospek", fontSize = 17.sp) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
@@ -133,7 +135,7 @@ fun AddProspekScreen(
 
             Spacer(Modifier.height(4.dp))
 
-            if (!readOnly) {
+            if (createdId == null || isEditing) {
                 Button(
                     onClick = {
                         if (nama.isBlank() || kota.isBlank() || noWa.isBlank()) {
@@ -142,25 +144,44 @@ fun AddProspekScreen(
                         }
                         scope.launch {
                             saving = true
-                            val res = withContext(Dispatchers.IO) {
-                                ProspekRepository.create(
-                                    Prospek(
-                                        nama = nama.trim(),
-                                        kota = kota.trim(),
-                                        no_wa = noWa.trim(),
-                                        umrah_untuk = umrahUntuk.name,
-                                        tgl_kantor = tglKantor,
-                                        catatan = catatan.trim()
-                                    ),
-                                    createdBy = "admin"
-                                )
-                            }
-                            saving = false
-                            res.onSuccess { newId ->
-                                createdId = newId
-                                snack.showSnackbar("Prospek tersimpan")
-                            }.onFailure {
-                                snack.showSnackbar("Gagal simpan: ${it.message}")
+                            if (isEditing && existingProspek != null) {
+                                val res = withContext(Dispatchers.IO) {
+                                    ProspekRepository.update(
+                                        existingProspek.id,
+                                        existingProspek.copy(
+                                            nama = nama.trim(),
+                                            kota = kota.trim(),
+                                            no_wa = noWa.trim(),
+                                            umrah_untuk = umrahUntuk.name,
+                                            tgl_kantor = tglKantor,
+                                            catatan = catatan.trim()
+                                        )
+                                    )
+                                }
+                                saving = false
+                                res.onSuccess { snack.showSnackbar("Prospek diperbarui") }
+                                    .onFailure { snack.showSnackbar("Gagal simpan: ${it.message}") }
+                            } else {
+                                val res = withContext(Dispatchers.IO) {
+                                    ProspekRepository.create(
+                                        Prospek(
+                                            nama = nama.trim(),
+                                            kota = kota.trim(),
+                                            no_wa = noWa.trim(),
+                                            umrah_untuk = umrahUntuk.name,
+                                            tgl_kantor = tglKantor,
+                                            catatan = catatan.trim()
+                                        ),
+                                        createdBy = "admin"
+                                    )
+                                }
+                                saving = false
+                                res.onSuccess { newId ->
+                                    createdId = newId
+                                    snack.showSnackbar("Prospek tersimpan")
+                                }.onFailure {
+                                    snack.showSnackbar("Gagal simpan: ${it.message}")
+                                }
                             }
                         }
                     },
@@ -172,21 +193,23 @@ fun AddProspekScreen(
                     else {
                         Icon(Icons.Default.Check, null)
                         Spacer(Modifier.width(6.dp))
-                        Text("SIMPAN")
+                        Text(if (isEditing) "SIMPAN PERUBAHAN" else "SIMPAN")
                     }
                 }
-            } else {
+            }
+            if (createdId != null || isEditing) {
                 Button(
                     onClick = { showDateFu = true },
                     modifier = Modifier.fillMaxWidth().height(48.dp),
-                    enabled = !fuSaved,
+                    enabled = true,
                     colors = ButtonDefaults.buttonColors(containerColor = AdminSuccess)
                 ) {
                     Icon(Icons.Default.DateRange, null)
                     Spacer(Modifier.width(6.dp))
-                    Text(if (fuSaved) "TGL FU TERSIMPAN" else "SET TGL. FOLLOW UP (FU)")
+                    val hasFu = fuSaved || (existingProspek?.fu_date ?: 0L) > 0L
+                    Text(if (hasFu) "UBAH TGL. FOLLOW UP" else "SET TGL. FOLLOW UP (FU)")
                 }
-                if (fuSaved) {
+                if (fuSaved || (existingProspek?.fu_date ?: 0L) > 0L) {
                     OutlinedButton(
                         onClick = { onSaved() },
                         modifier = Modifier.fillMaxWidth().height(48.dp)
@@ -220,15 +243,16 @@ fun AddProspekScreen(
                 TextButton(onClick = {
                     val picked = state.selectedDateMillis
                     showDateFu = false
-                    if (picked != null && createdId != null) {
+                    val targetId = createdId ?: existingProspek?.id
+                    if (picked != null && targetId != null) {
                         scope.launch {
                             val r = withContext(Dispatchers.IO) {
-                                ProspekRepository.updateFuDate(createdId!!, picked)
+                                ProspekRepository.updateFuDate(targetId, picked)
                             }
                             r.onSuccess {
                                 fuSaved = true
                                 snack.showSnackbar("Tgl FU disimpan")
-                                ProspekReminderScheduler.scheduleExact(context, createdId!!, nama, picked)
+                                ProspekReminderScheduler.scheduleExact(context, targetId, nama, picked)
                             }.onFailure {
                                 snack.showSnackbar("Gagal simpan FU: ${it.message}")
                             }

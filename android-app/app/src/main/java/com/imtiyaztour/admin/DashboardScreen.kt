@@ -17,6 +17,11 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun DashboardScreen() {
+    val allProspek by ProspekRepository.observeAll().collectAsState(initial = emptyList())
+    val pendingFu = allProspek.count { p ->
+        p.statusEnum() == ProspekStatus.FU_DIJADWALKAN && (p.fu_date ?: Long.MAX_VALUE) <= System.currentTimeMillis()
+    }
+
     val context = LocalContext.current
     val adminId = Prefs.getAdminId(context)
     val token = Prefs.getToken(context)
@@ -61,6 +66,36 @@ fun DashboardScreen() {
             }
         }
         Spacer(Modifier.height(16.dp))
+
+        if (pendingFu > 0) {
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("\u26A0", fontSize = 22.sp, color = Color(0xFFDC2626))
+                    Spacer(Modifier.width(10.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Jamaah belum di FU: $pendingFu",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color(0xFFDC2626)
+                        )
+                        Text(
+                            "Segera lakukan follow up pada prospek yang jatuh tempo",
+                            fontSize = 11.sp,
+                            color = AdminTextGray
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+        }
 
         if (loading) {
             LinearProgressIndicator(Modifier.fillMaxWidth(), color = AdminPrimary)

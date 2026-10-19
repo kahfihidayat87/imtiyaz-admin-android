@@ -42,8 +42,10 @@ object ProspekNotificationHelper {
             .setContentTitle("Jamaah Wajib difollow Up Sekarang")
             .setContentText(nama)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .setContentIntent(pi)
+            .setFullScreenIntent(pi, true)
             .build()
         try {
             NotificationManagerCompat.from(context).notify(prospekId.hashCode(), notif)

@@ -82,6 +82,21 @@ object ProspekRepository {
         Unit
     }
 
+    suspend fun update(id: String, p: Prospek): Result<Unit> = runCatching {
+        col().document(id).update(
+            mapOf(
+                "nama" to p.nama.trim(),
+                "kota" to p.kota.trim(),
+                "no_wa" to p.no_wa.trim(),
+                "umrah_untuk" to p.umrah_untuk,
+                "tgl_kantor" to p.tgl_kantor,
+                "catatan" to p.catatan.trim(),
+                "updated_at" to System.currentTimeMillis()
+            )
+        ).await()
+        Unit
+    }
+
     suspend fun delete(id: String): Result<Unit> = runCatching {
         col().document(id).delete().await()
         Unit

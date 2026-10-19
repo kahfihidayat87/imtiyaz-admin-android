@@ -69,6 +69,7 @@ fun AdminApp() {
     var showAddJamaah by remember { mutableStateOf(false) }
     var showAddProspek by remember { mutableStateOf(false) }
     var followUpProspekId by remember { mutableStateOf<String?>(null) }
+    var editingProspek by remember { mutableStateOf<Prospek?>(null) }
 
     // Fase 3 D3: navigasi trip
     var selectedTrip by remember { mutableStateOf<Trip?>(null) }
@@ -269,12 +270,19 @@ fun AdminApp() {
                 "prospek" -> {
                     when {
                         showAddProspek -> AddProspekScreen(
-                            onBack = { showAddProspek = false },
-                            onSaved = { showAddProspek = false }
+                            existingProspek = editingProspek,
+                            onBack = { showAddProspek = false; editingProspek = null },
+                            onSaved = { showAddProspek = false; editingProspek = null }
                         )
                         else -> ProspekListScreen(
-                            onAddClick = { showAddProspek = true },
-                            onProspekClick = { }
+                            onAddClick = { showAddProspek = true; editingProspek = null },
+                            onProspekClick = { },
+                            onEditClick = { editingProspek = it; showAddProspek = true },
+                            onDeleteClick = { prospek ->
+                                kotlinx.coroutines.MainScope().launch {
+                                    ProspekRepository.delete(prospek.id)
+                                }
+                            }
                         )
                     }
                 }
