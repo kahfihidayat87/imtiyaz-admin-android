@@ -48,6 +48,7 @@ fun AdminApp() {
     var selectedTab by remember { mutableIntStateOf(0) }
     var editingJamaah by remember { mutableStateOf<JamaahSummary?>(null) }
     var showAddJamaah by remember { mutableStateOf(false) }
+    var showAddProspek by remember { mutableStateOf(false) }
 
     // Fase 3 D3: navigasi trip
     var selectedTrip by remember { mutableStateOf<Trip?>(null) }
@@ -229,7 +230,18 @@ fun AdminApp() {
                     }
                 }
                 "skrining" -> SkriningListScreen()
-                "prospek" -> ProspekListScreen(onAddClick = {}, onProspekClick = {})
+                "prospek" -> {
+                    when {
+                        showAddProspek -> AddProspekScreen(
+                            onBack = { showAddProspek = false },
+                            onSaved = { showAddProspek = false }
+                        )
+                        else -> ProspekListScreen(
+                            onAddClick = { showAddProspek = true },
+                            onProspekClick = { }
+                        )
+                    }
+                }
                 "bukti" -> BuktiListScreen()
                 "kanal" -> KanalListScreen()
                 "info" -> PengumumanScreen()
