@@ -170,9 +170,9 @@ fun AdminApp() {
             }
         }
     ) { padding ->
+        val activity = LocalContext.current as? android.app.Activity
         LaunchedEffect(Unit) {
-            val act = LocalContext.current as? android.app.Activity
-            val id = act?.intent?.getStringExtra("prospek_id")
+            val id = activity?.intent?.getStringExtra("prospek_id")
             if (!id.isNullOrBlank()) followUpProspekId = id
         }
         LaunchedEffect(currentTabKey) {

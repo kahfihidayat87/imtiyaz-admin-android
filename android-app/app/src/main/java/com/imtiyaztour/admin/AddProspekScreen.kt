@@ -1,6 +1,8 @@
 package com.imtiyaztour.admin
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -68,7 +70,7 @@ fun AddProspekScreen(
         snackbarHost = { SnackbarHost(snack) }
     ) { pad ->
         Column(
-            Modifier.fillMaxSize().padding(pad).padding(16.dp),
+            Modifier.fillMaxSize().padding(pad).padding(16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             OutlinedTextField(
