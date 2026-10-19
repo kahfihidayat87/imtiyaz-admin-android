@@ -68,6 +68,7 @@ fun AdminApp() {
     var editingJamaah by remember { mutableStateOf<JamaahSummary?>(null) }
     var showAddJamaah by remember { mutableStateOf(false) }
     var showAddProspek by remember { mutableStateOf(false) }
+    var followUpProspekId by remember { mutableStateOf<String?>(null) }
 
     // Fase 3 D3: navigasi trip
     var selectedTrip by remember { mutableStateOf<Trip?>(null) }
@@ -169,6 +170,22 @@ fun AdminApp() {
             }
         }
     ) { padding ->
+        LaunchedEffect(Unit) {
+            val act = LocalContext.current as? android.app.Activity
+            val id = act?.intent?.getStringExtra("prospek_id")
+            if (!id.isNullOrBlank()) followUpProspekId = id
+        }
+        LaunchedEffect(currentTabKey) {
+            if (currentTabKey == "prospek" && followUpProspekId == null) {
+                val due = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    ProspekRepository.getFirstDue()
+                }
+                if (due != null) followUpProspekId = due.id
+            }
+        }
+        followUpProspekId?.let { pid ->
+            ProspekFollowUpDialog(prospekId = pid, onDismiss = { followUpProspekId = null })
+        }
         Box(Modifier.padding(padding)) {
             when (currentTabKey) {
                 "dashboard" -> DashboardScreen()

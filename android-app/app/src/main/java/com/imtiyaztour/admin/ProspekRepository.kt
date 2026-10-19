@@ -90,4 +90,15 @@ object ProspekRepository {
     suspend fun getById(id: String): Prospek? = runCatching {
         col().document(id).get().await().toObject(Prospek::class.java)
     }.getOrNull()
+
+    suspend fun getFirstDue(): Prospek? = runCatching {
+        val snap = col()
+            .whereEqualTo("status", ProspekStatus.FU_DIJADWALKAN.name)
+            .limit(20)
+            .get().await()
+        snap.documents
+            .mapNotNull { it.toObject(Prospek::class.java) }
+            .filter { (it.fu_date ?: 0L) <= System.currentTimeMillis() }
+            .minByOrNull { it.fu_date ?: Long.MAX_VALUE }
+    }.getOrNull()
 }
