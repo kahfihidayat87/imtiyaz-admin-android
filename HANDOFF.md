@@ -657,3 +657,59 @@ PDF Export Manifest — selain room list
 - D4 Visa Tracking (submitted/approved/ready)
 - Admin monitoring gelombang radio
 - Export PDF manifest trip
+
+---
+
+## Hotfix — Migrasi Keep-Alive & Heartbeat ke cron-job.org (16 Okt 2026)
+
+**Status:** ✅ Selesai (Server & CI Only)
+
+### Masalah
+Hostinger mengaktifkan **WAF/CDN JS Challenge** di depan `api.pastiumrah.com`. WAF ini memblokir semua **IP datacenter** (termasuk GitHub Actions), sehingga cron `keep-alive.yml` (5 menit) dan `heartbeat.yml` (6 jam) gagal dengan **HTTP 403**.
+
+### Solusi
+1. Migrasi kedua cron ke **cron-job.org** (IP mereka sudah whitelisted Hostinger).
+2. Workflow GitHub Actions di-**rename** menjadi `.disabled`:
+   - `.github/workflows/keep-alive.yml.disabled`
+   - `.github/workflows/heartbeat.yml.disabled`
+3. Cron baru di cron-job.org:
+   - **Imtiyaz API Health Check**: GET `/health` (5 menit)
+   - **Imtiyaz Heartbeat Broadcast**: POST `/api/heartbeat-broadcast` (6 jam) — butuh Header `x-api-key` + body `{}`.
+
+**Commit:** `032a9e2`, `c6c607e`
+
+---
+
+## Hotfix — Format PDF Riwayat Pembayaran (19 Okt 2026)
+
+**Status:** ✅ Selesai (Server-side Only, NO APK UPDATE)
+
+### Masalah
+PDF Invoice yang di-generate dari App Admin hanya menampilkan "Payment History" sebagai paragraf teks panjang (`Payment on [tanggal] using a [metode]: [nominal]`), sehingga sulit dibaca jika ada lebih dari 1 transaksi.
+
+### Solusi
+Mengubah *loop rendering* pada `invoice-routes.js` (Node.js). Teks paragraf diganti menjadi format **Tabel 3 Kolom**:
+- **Tanggal** (format `dd MMM yyyy`)
+- **Metode** (Transfer Bank / Cash)
+- **Nominal** (rata kanan)
+
+### Catatan
+- Perubahan murni di server (`invoice-routes.js`).
+- Admin sudah bisa mengubah tanggal transaksi (via *Date Picker* kalender) di App Admin.
+- Tidak perlu update APK.
+- File backup: `/tmp/invoice-routes.js.bak-table-*`
+
+
+## Hotfix — Format PDF Riwayat Pembayaran (19 Okt 2026)
+
+**Status:** ✅ Selesai (Server-side & App Admin UI)
+
+### Masalah
+PDF Invoice yang di-generate hanya menampilkan "Payment History" sebagai paragraf teks panjang, sulit dibaca jika ada banyak transaksi.
+
+### Solusi
+1. **Server (`invoice-routes.js`):** Mengubah teks paragraf menjadi **Tabel 3 Kolom** (Tanggal | Metode | Nominal rata kanan).
+2. **App Admin (`InvoiceScreen.kt`):** Memastikan Admin bisa mengubah tanggal transaksi via *Date Picker* (kalender) sebelum PDF di-generate. (Tidak perlu update APK, fitur ini sudah ada).
+
+### Catatan
+- File backup server: `/tmp/invoice-routes.js.bak-table-*`
