@@ -1,5 +1,6 @@
 package com.imtiyaztour.admin
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
@@ -16,7 +17,11 @@ object ProspekRepository {
         val listener = col()
             .orderBy("created_at", Query.Direction.DESCENDING)
             .addSnapshotListener { snap, err ->
-                if (err != null) { close(err); return@addSnapshotListener }
+                if (err != null) {
+                    Log.e("ProspekRepo", "Firestore listener error: ${err.message}", err)
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
                 val list = snap?.documents
                     ?.mapNotNull { it.toObject(Prospek::class.java) }
                     ?: emptyList()
@@ -30,7 +35,11 @@ object ProspekRepository {
             .whereEqualTo("status", ProspekStatus.FU_DIJADWALKAN.name)
             .whereLessThanOrEqualTo("fu_date", System.currentTimeMillis())
             .addSnapshotListener { snap, err ->
-                if (err != null) { close(err); return@addSnapshotListener }
+                if (err != null) {
+                    Log.e("ProspekRepo", "Firestore listener error: ${err.message}", err)
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
                 val list = snap?.documents
                     ?.mapNotNull { it.toObject(Prospek::class.java) }
                     ?: emptyList()
