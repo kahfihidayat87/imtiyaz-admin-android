@@ -76,6 +76,7 @@ fun AdminApp() {
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
+            AdminTab("prospek", "Prospek", Icons.Default.Call),
             AdminTab("admin", "Admin", Icons.Default.Person),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
@@ -99,6 +100,7 @@ fun AdminApp() {
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
+            AdminTab("prospek", "Prospek", Icons.Default.Call),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
     }
@@ -226,6 +228,7 @@ fun AdminApp() {
                     }
                 }
                 "skrining" -> SkriningListScreen()
+                "prospek" -> ProspekListScreen(onAddClick = {}, onProspekClick = {})
                 "bukti" -> BuktiListScreen()
                 "kanal" -> KanalListScreen()
                 "info" -> PengumumanScreen()
