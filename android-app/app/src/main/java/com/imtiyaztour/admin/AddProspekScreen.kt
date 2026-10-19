@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,7 @@ fun AddProspekScreen(
 ) {
     val scope = rememberCoroutineScope()
     val snack = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     var nama by remember { mutableStateOf("") }
     var kota by remember { mutableStateOf("") }
@@ -224,6 +226,7 @@ fun AddProspekScreen(
                             r.onSuccess {
                                 fuSaved = true
                                 snack.showSnackbar("Tgl FU disimpan")
+                                ProspekReminderScheduler.scheduleExact(context, createdId!!, nama, picked)
                             }.onFailure {
                                 snack.showSnackbar("Gagal simpan FU: ${it.message}")
                             }

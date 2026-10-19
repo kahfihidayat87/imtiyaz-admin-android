@@ -32,6 +32,25 @@ import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // ProspekPermissionSetup: request POST_NOTIFICATIONS + SCHEDULE_EXACT_ALARM
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            val permStatus = androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+            if (permStatus != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 7701)
+            }
+        }
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            try {
+                val am = getSystemService(android.app.AlarmManager::class.java)
+                if (am != null && !am.canScheduleExactAlarms()) {
+                    startActivity(android.content.Intent(
+                        android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                        android.net.Uri.parse("package:$packageName")
+                    ))
+                }
+            } catch (_: Exception) {}
+        }
+
         super.onCreate(savedInstanceState)
         setTheme(android.R.style.Theme_Material_Light_NoActionBar)
         setContent { AdminApp() }
