@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Assignment
 import androidx.compose.material.icons.filled.Call
@@ -69,6 +70,8 @@ fun AdminApp() {
     var editingJamaah by remember { mutableStateOf<JamaahSummary?>(null) }
     var showAddJamaah by remember { mutableStateOf(false) }
     var showAddProspek by remember { mutableStateOf(false) }
+    var showCashflowForm by remember { mutableStateOf(false) }
+    var editingCashflow by remember { mutableStateOf<Cashflow?>(null) }
     var followUpProspekId by remember { mutableStateOf<String?>(null) }
     var editingProspek by remember { mutableStateOf<Prospek?>(null) }
 
@@ -100,6 +103,7 @@ fun AdminApp() {
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("info", "Info", Icons.Default.Campaign),
             AdminTab("prospek", "Prospek", Icons.Default.Call),
+            AdminTab("kas", "Kas", Icons.Default.AccountBalanceWallet),
             AdminTab("admin", "Admin", Icons.Default.Person),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
@@ -107,6 +111,7 @@ fun AdminApp() {
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
+            AdminTab("kas", "Kas", Icons.Default.AccountBalanceWallet),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
         "tl" -> listOf(
@@ -281,6 +286,19 @@ fun AdminApp() {
                                     ProspekRepository.delete(prospek.id)
                                 }
                             }
+                        )
+                    }
+                }
+                "kas" -> {
+                    when {
+                        showCashflowForm -> CashflowFormScreen(
+                            existing = editingCashflow,
+                            onBack = { showCashflowForm = false; editingCashflow = null },
+                            onSaved = { showCashflowForm = false; editingCashflow = null }
+                        )
+                        else -> CashflowScreen(
+                            onAddClick = { showCashflowForm = true; editingCashflow = null },
+                            onItemClick = { editingCashflow = it; showCashflowForm = true }
                         )
                     }
                 }
