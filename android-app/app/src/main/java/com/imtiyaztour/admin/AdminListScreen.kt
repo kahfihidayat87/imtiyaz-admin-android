@@ -213,7 +213,6 @@ private fun CreateAdminDialog(adminId: String, token: String,
     var password by remember { mutableStateOf("") }
     var nama by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("admin") }
-    var kanalId by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
     var msg by remember { mutableStateOf("") }
 
@@ -245,9 +244,6 @@ private fun CreateAdminDialog(adminId: String, token: String,
                         }
                     }
                 }
-                OutlinedTextField(kanalId, { kanalId = it },
-                    label = { Text("Kanal Radio ID (opsional)") },
-                    modifier = Modifier.fillMaxWidth(), singleLine = true)
                 if (msg.isNotEmpty()) Text(msg, fontSize = 11.sp, color = AdminDanger)
             }
         },
@@ -262,7 +258,7 @@ private fun CreateAdminDialog(adminId: String, token: String,
                             AdminApiClient.service.adminCreate(AdminCreateRequest(
                                 admin_id = adminId, token = token,
                                 username = username.trim(), password = password,
-                                nama = nama.trim(), role = role, kanal_id = kanalId.trim()))
+                                nama = nama.trim(), role = role))
                         }
                         if (resp.success == true) onSuccess() else msg = resp.error ?: "Gagal"
                     } catch (e: Exception) { msg = "Error: " + (e.message ?: "") }

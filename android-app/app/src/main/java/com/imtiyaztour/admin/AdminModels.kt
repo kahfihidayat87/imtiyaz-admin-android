@@ -88,25 +88,8 @@ data class SimpleResponse(
 )
 
 
-data class KanalItem(
-    val id: String,
-    val nama: String,
-    val total_jamaah: Int = 0,
-    val ada_tl: Boolean = false
-)
 
-data class KanalListResponse(
-    val success: Boolean? = null,
-    val kanal: List<KanalItem> = emptyList(),
-    val error: String? = null
-)
 
-data class KanalSaveResponse(
-    val success: Boolean? = null,
-    val kanal_id: String? = null,
-    val nama: String? = null,
-    val error: String? = null
-)
 
 
 data class BuktiItem(

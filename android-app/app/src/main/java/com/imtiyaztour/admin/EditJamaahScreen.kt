@@ -39,7 +39,6 @@ fun EditJamaahScreen(
 
     var nama by remember { mutableStateOf(jamaah.nama) }
     var paketId by remember { mutableStateOf(jamaah.paket_id ?: "") }
-    var kanalId by remember { mutableStateOf(jamaah.kanal_id ?: "") }
     var totalTagihan by remember { mutableStateOf(jamaah.total_tagihan.toString()) }
     var sudahDibayar by remember { mutableStateOf(jamaah.sudah_dibayar.toString()) }
     var status by remember { mutableStateOf(jamaah.status_pembayaran) }
@@ -99,7 +98,6 @@ fun EditJamaahScreen(
                 checklist = d.checklist_dokumen ?: emptyMap()
                 nama = d.nama
                 paketId = d.paket_id ?: ""
-                kanalId = d.kanal_id ?: ""
                 totalTagihan = d.total_tagihan.toString()
                 sudahDibayar = d.sudah_dibayar.toString()
                 status = d.status_pembayaran
@@ -334,7 +332,6 @@ fun EditJamaahScreen(
                                 "jamaah_id" to jamaah.id.toString(),
                                 "nama" to nama,
                                 "paket_id" to paketId,
-                                "kanal_id" to kanalId,
                                 "total_tagihan" to (totalTagihan.toLongOrNull() ?: 0L).toString(),
                                 "sudah_dibayar" to (sudahDibayar.toLongOrNull() ?: 0L).toString(),
                                 "status_pembayaran" to status

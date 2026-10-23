@@ -54,15 +54,6 @@ interface AdminApiService {
     @POST("api/admin/admin-kesehatan-save")
     suspend fun kesehatanSave(@Body body: KesehatanSaveRequest): SimpleResponse
 
-    @POST("api/admin/admin-kanal")
-    suspend fun kanalList(@Body body: Map<String, String>): KanalListResponse
-
-    @POST("api/admin/admin-kanal-save")
-    suspend fun kanalSave(@Body body: Map<String, String>): KanalSaveResponse
-
-    @POST("api/admin/admin-kanal-delete")
-    suspend fun kanalDelete(@Body body: Map<String, String>): SimpleResponse
-
     @retrofit2.http.GET("api/admin/admin-jamaah/{id}")
     suspend fun jamaahDetail(
         @retrofit2.http.Path("id") id: Int,
