@@ -12,6 +12,11 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Share
+import java.io.File
+import androidx.core.content.FileProvider
+import android.content.Intent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +34,7 @@ fun CashflowScreen(
     onAddClick: () -> Unit,
     onItemClick: (Cashflow) -> Unit
 ) {
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Operasional, 1: Jamaah
     val akunAktif = if (selectedTab == 0) CashflowAkun.KAS_OPERASIONAL.name else CashflowAkun.KAS_JAMAAH.name
 
@@ -79,12 +85,18 @@ fun CashflowScreen(
             }
 
             // List Transaksi
-            Text(
-                "Riwayat Transaksi",
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Riwayat Transaksi", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                if (listKas.isNotEmpty()) {
+                    IconButton(onClick = { exportToCsv(context, listKas, akunAktif) }) {
+                        Icon(Icons.Default.Share, contentDescription = "Export CSV", tint = AdminPrimary)
+                    }
+                }
+            }
 
             if (listKas.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
