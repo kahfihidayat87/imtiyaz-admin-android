@@ -54,11 +54,15 @@ fun CashflowFormScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
 
-    // Reset kategori jika akun atau tipe berubah
+    // Cache list kategori berdasarkan akun & tipe agar tidak flicker
+    val currentKategoriList = remember(akun, tipe) {
+        CashflowKategori.getBy(akun, tipe)
+    }
+
+    // Reset kategori jika akun atau tipe berubah dan kategori saat ini tidak valid
     LaunchedEffect(akun, tipe) {
-        val valid = CashflowKategori.getBy(akun, tipe)
-        if (kategori !in valid) {
-            kategori = valid.firstOrNull() ?: ""
+        if (kategori !in currentKategoriList) {
+            kategori = currentKategoriList.firstOrNull() ?: ""
         }
     }
 
@@ -136,7 +140,7 @@ fun CashflowFormScreen(
                     modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
                 ExposedDropdownMenu(expanded = expandedKategori, onDismissRequest = { expandedKategori = false }) {
-                    CashflowKategori.getBy(akun, tipe).forEach {
+                    currentKategoriList.forEach {
                         DropdownMenuItem(text = { Text(it) }, onClick = { kategori = it; expandedKategori = false })
                     }
                 }

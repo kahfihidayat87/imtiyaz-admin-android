@@ -38,11 +38,20 @@ fun CashflowScreen(
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Operasional, 1: Jamaah
     val akunAktif = if (selectedTab == 0) CashflowAkun.KAS_OPERASIONAL.name else CashflowAkun.KAS_JAMAAH.name
 
-    val listKas by CashflowRepository.observeCashflow(akunAktif).collectAsState(initial = emptyList())
+    val listKas by CashflowRepository.observeCashflow(akunAktif).collectAsState(initial = null)
 
-    val totalMasuk = listKas.filter { it.tipeEnum() == CashflowTipe.MASUK }.sumOf { it.nominal }
-    val totalKeluar = listKas.filter { it.tipeEnum() == CashflowTipe.KELUAR }.sumOf { it.nominal }
-    val saldo = totalMasuk - totalKeluar
+    // Hitung total di dalam remember agar tidak recompute setiap frame
+    val stats = remember(listKas) {
+        val list = listKas ?: emptyList()
+        val masuk = list.filter { it.tipeEnum() == CashflowTipe.MASUK }.sumOf { it.nominal }
+        val keluar = list.filter { it.tipeEnum() == CashflowTipe.KELUAR }.sumOf { it.nominal }
+        Triple(masuk, keluar, masuk - keluar)
+    }
+    
+    val totalMasuk = stats.first
+    val totalKeluar = stats.second
+    val saldo = stats.third
+    val isLoading = listKas == null
 
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
         maximumFractionDigits = 0
@@ -91,14 +100,18 @@ fun CashflowScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("Riwayat Transaksi", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                if (listKas.isNotEmpty()) {
-                    IconButton(onClick = { exportToCsv(context, listKas, akunAktif) }) {
+                if (!listKas.isNullOrEmpty()) {
+                    IconButton(onClick = { exportToCsv(context, listKas ?: emptyList(), akunAktif) }) {
                         Icon(Icons.Default.Share, contentDescription = "Export CSV", tint = AdminPrimary)
                     }
                 }
             }
 
-            if (listKas.isEmpty()) {
+            if (isLoading) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = AdminPrimary)
+                }
+            } else if (listKas.isNullOrEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("Belum ada transaksi", color = AdminTextGray, fontSize = 13.sp)
                 }
@@ -108,7 +121,7 @@ fun CashflowScreen(
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(listKas, key = { it.id }) { item ->
+                    items(listKas ?: emptyList(), key = { it.id }) { item ->
                         CashflowItemCard(item, formatter) { onItemClick(item) }
                     }
                 }
