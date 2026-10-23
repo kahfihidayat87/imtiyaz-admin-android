@@ -164,3 +164,31 @@ private fun CashflowItemCard(item: Cashflow, formatter: NumberFormat, onClick: (
         }
     }
 }
+
+private fun exportToCsv(context: android.content.Context, list: List<Cashflow>, akunNama: String) {
+    val builder = StringBuilder()
+    builder.append("Tanggal,Tipe,Kategori,Nominal,Keterangan\n")
+    val tglFmt = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    
+    list.forEach { item ->
+        val tgl = tglFmt.format(Date(item.tanggal))
+        val tipe = if (item.tipeEnum() == CashflowTipe.MASUK) "Masuk" else "Keluar"
+        val ket = item.keterangan.replace(",", " ")
+        builder.append("$tgl,$tipe,${item.kategori},${item.nominal},$ket\n")
+    }
+
+    try {
+        val file = File(context.cacheDir, "Rekap_$akunNama.csv")
+        file.writeText(builder.toString())
+        
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/csv"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Bagikan CSV"))
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
