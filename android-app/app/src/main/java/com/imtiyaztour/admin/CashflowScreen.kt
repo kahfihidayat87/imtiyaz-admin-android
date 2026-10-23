@@ -1,5 +1,7 @@
 package com.imtiyaztour.admin
 
+import android.content.Intent
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,19 +12,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.material.icons.filled.Share
-import java.io.File
-import androidx.core.content.FileProvider
-import android.content.Intent
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.delay
+import java.io.File
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -52,6 +54,17 @@ fun CashflowScreen(
     val totalKeluar = stats.second
     val saldo = stats.third
     val isLoading = listKas == null
+
+    // Delay 400ms sebelum dianggap "kosong" untuk mencegah kedipan (flicker)
+    var showEmpty by remember { mutableStateOf(false) }
+    LaunchedEffect(listKas) {
+        if (listKas.isNullOrEmpty()) {
+            delay(400)
+            showEmpty = true
+        } else {
+            showEmpty = false
+        }
+    }
 
     val formatter = NumberFormat.getCurrencyInstance(Locale("id", "ID")).apply {
         maximumFractionDigits = 0
@@ -93,7 +106,7 @@ fun CashflowScreen(
                 }
             }
 
-            // List Transaksi
+            // List Transaksi Header + Export
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -107,22 +120,31 @@ fun CashflowScreen(
                 }
             }
 
-            if (isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = AdminPrimary)
-                }
-            } else if (listKas.isNullOrEmpty()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Belum ada transaksi", color = AdminTextGray, fontSize = 13.sp)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(listKas ?: emptyList(), key = { it.id }) { item ->
-                        CashflowItemCard(item, formatter) { onItemClick(item) }
+            // Konten List
+            Box(Modifier.fillMaxSize()) {
+                Crossfade(targetState = isLoading, label = "loading_transition") { loading ->
+                    if (loading) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = AdminPrimary)
+                        }
+                    } else {
+                        if (listKas.isNullOrEmpty()) {
+                            if (showEmpty) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("Belum ada transaksi", color = AdminTextGray, fontSize = 13.sp)
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 80.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(listKas ?: emptyList(), key = { it.id }) { item ->
+                                    CashflowItemCard(item, formatter) { onItemClick(item) }
+                                }
+                            }
+                        }
                     }
                 }
             }
