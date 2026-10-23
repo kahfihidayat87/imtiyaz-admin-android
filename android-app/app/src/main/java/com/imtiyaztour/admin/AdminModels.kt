@@ -280,7 +280,7 @@ data class AdminCreateRequest(
     val password: String,
     val nama: String,
     val role: String,
-    val kanal_id: String
+    val kanal_id: String? = null
 )
 
 data class AdminCreateResponse(
