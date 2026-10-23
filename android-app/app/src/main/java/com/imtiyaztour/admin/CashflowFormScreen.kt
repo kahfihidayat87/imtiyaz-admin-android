@@ -99,7 +99,7 @@ fun CashflowFormScreen(
                     readOnly = true,
                     label = { Text("Tipe Transaksi") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipe) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
                 ExposedDropdownMenu(expanded = expandedTipe, onDismissRequest = { expandedTipe = false }) {
                     CashflowTipe.values().forEach {
@@ -116,7 +116,7 @@ fun CashflowFormScreen(
                     readOnly = true,
                     label = { Text("Sumber Kas") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedAkun) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
                 ExposedDropdownMenu(expanded = expandedAkun, onDismissRequest = { expandedAkun = false }) {
                     CashflowAkun.values().forEach {
@@ -133,7 +133,7 @@ fun CashflowFormScreen(
                     readOnly = true,
                     label = { Text("Kategori") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedKategori) },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
                 ExposedDropdownMenu(expanded = expandedKategori, onDismissRequest = { expandedKategori = false }) {
                     CashflowKategori.getBy(akun, tipe).forEach {
