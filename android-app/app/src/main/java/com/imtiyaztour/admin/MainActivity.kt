@@ -98,7 +98,6 @@ fun AdminApp() {
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
             AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
-            AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
             AdminTab("prospek", "Prospek", Icons.Default.Call),
             AdminTab("admin", "Admin", Icons.Default.Person),
@@ -112,7 +111,6 @@ fun AdminApp() {
         )
         "tl" -> listOf(
             AdminTab("dashboard", "Dashboard", Icons.Default.Dashboard),
-            AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
@@ -122,7 +120,6 @@ fun AdminApp() {
             AdminTab("jamaah", "Jamaah", Icons.Default.People),
             AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
-            AdminTab("kanal", "Kanal", Icons.Default.Radio),
             AdminTab("info", "Info", Icons.Default.Campaign),
             AdminTab("prospek", "Prospek", Icons.Default.Call),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
@@ -288,7 +285,6 @@ fun AdminApp() {
                     }
                 }
                 "bukti" -> BuktiListScreen()
-                "kanal" -> KanalListScreen()
                 "info" -> PengumumanScreen()
                 "admin" -> AdminListScreen()
                 "saya" -> SayaScreen(onLoggedOut = {
