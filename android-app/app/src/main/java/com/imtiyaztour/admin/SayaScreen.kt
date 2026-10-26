@@ -1,4 +1,11 @@
 package com.imtiyaztour.admin
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Card
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.filled.MenuBook
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -45,6 +52,26 @@ fun SayaScreen(onLoggedOut: () -> Unit, onKajianClick: () -> Unit = {}) {
                 Text("Admin ID: $adminId", fontSize = 11.sp, color = AdminTextGray)
             }
         }
+        Spacer(Modifier.height(16.dp))
+
+        // --- TOMBOL JADWAL KAJIAN MABRUR ---
+        Card(
+            modifier = Modifier.fillMaxWidth().clickable { onKajianClick() },
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(1.dp)
+        ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.MenuBook, contentDescription = null, tint = AdminPrimary)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("Jadwal Kajian Mabrur", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Kelola jadwal kajian untuk jamaah", fontSize = 11.sp, color = AdminTextGray)
+                }
+            }
+        }
+        // ------------------------------------
+
         Spacer(Modifier.height(16.dp))
 
         Button(
