@@ -23,11 +23,28 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun KajianListScreen(onAddClick: () -> Unit) {
+fun KajianListScreen(onAddClick: () -> Unit, onBack: () -> Unit) {
     val list by KajianRepository.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
-    Box(Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Jadwal Kajian Mabrur") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(androidx.compose.material.icons.Icons.Default.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = AdminPrimary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
+            )
+        }
+    ) { pad ->
+        Box(Modifier.fillMaxSize().padding(pad)) {
         if (list.isEmpty()) {
             Text("Belum ada jadwal kajian", modifier = Modifier.align(Alignment.Center), color = AdminTextGray)
         } else {
@@ -122,3 +139,5 @@ fun AddKajianScreen(onBack: () -> Unit, onSaved: () -> Unit) {
         ) { DatePicker(state = state) }
     }
 }
+
+    }
