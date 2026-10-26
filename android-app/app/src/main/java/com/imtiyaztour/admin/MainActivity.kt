@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -104,6 +105,7 @@ fun AdminApp() {
             AdminTab("info", "Info", Icons.Default.Campaign),
             AdminTab("prospek", "Prospek", Icons.Default.Call),
             AdminTab("kas", "Kas", Icons.Default.AccountBalanceWallet),
+            AdminTab("monitor_radio", "Radio", Icons.Default.Sensors),
             AdminTab("admin", "Admin", Icons.Default.Person),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
@@ -289,6 +291,7 @@ fun AdminApp() {
                         )
                     }
                 }
+                "monitor_radio" -> MonitorRadioScreen()
                 "kas" -> {
                     when {
                         showCashflowForm -> CashflowFormScreen(

@@ -110,4 +110,8 @@ object AdminApiClient {
             .build()
             .create(AdminApiService::class.java)
     }
+
+    @POST("api/admin/admin-radio-revoke")
+    suspend fun adminRadioRevoke(@Body body: Map<String, String>): SimpleResponse
+
 }

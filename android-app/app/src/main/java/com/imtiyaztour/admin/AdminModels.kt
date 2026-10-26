@@ -328,3 +328,22 @@ data class InvoiceDataGetResponse(
     val has_data: Boolean = false,
     val error: String? = null
 )
+
+
+data class GelombangMonitor(
+    val kode: String = "",
+    val nama: String = "",
+    val tl_nama: String = "",
+    val is_active: Boolean = false,
+    val created_at: Long = 0L,
+    val expires_at: Long = 0L,
+    val peserta: Map<String, PesertaMonitor> = emptyMap()
+) {
+    val jumlahPeserta: Int get() = peserta.size
+}
+
+data class PesertaMonitor(
+    val nama: String = "",
+    val joined_at: Long = 0L,
+    val is_tl: Boolean = false
+)
