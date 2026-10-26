@@ -75,6 +75,7 @@ fun AdminApp() {
     var showAddProspek by remember { mutableStateOf(false) }
     var showCashflowForm by remember { mutableStateOf(false) }
     var showKajianForm by remember { mutableStateOf(false) }
+    var showKajianFromSaya by remember { mutableStateOf(false) }
     var editingCashflow by remember { mutableStateOf<Cashflow?>(null) }
     var followUpProspekId by remember { mutableStateOf<String?>(null) }
     var editingProspek by remember { mutableStateOf<Prospek?>(null) }
@@ -317,11 +318,17 @@ fun AdminApp() {
                 "bukti" -> BuktiListScreen()
                 "info" -> PengumumanScreen()
                 "admin" -> AdminListScreen()
-                "saya" -> SayaScreen(onLoggedOut = {
-                    isLoggedIn = false
-                    selectedTab = 0
-                    editingJamaah = null
-                })
+                "saya" -> {
+                    if (showKajianFromSaya) {
+                        if (showKajianForm) AddKajianScreen(onBack = { showKajianForm = false }, onSaved = { showKajianForm = false })
+                        else KajianListScreen(onAddClick = { showKajianForm = true })
+                    } else {
+                        SayaScreen(
+                            onLoggedOut = { isLoggedIn = false; selectedTab = 0; editingJamaah = null },
+                            onKajianClick = { showKajianFromSaya = true; showKajianForm = false } // Kirim callback
+                        )
+                    }
+                }
             }
         }
     }

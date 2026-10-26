@@ -2,6 +2,7 @@ package com.imtiyaztour.admin
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SayaScreen(onLoggedOut: () -> Unit) {
+fun SayaScreen(onLoggedOut: () -> Unit, onKajianClick: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
