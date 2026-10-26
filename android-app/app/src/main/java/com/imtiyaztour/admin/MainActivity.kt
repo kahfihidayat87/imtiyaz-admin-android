@@ -76,6 +76,7 @@ fun AdminApp() {
     var showCashflowForm by remember { mutableStateOf(false) }
     var showKajianForm by remember { mutableStateOf(false) }
     var showKajianFromSaya by remember { mutableStateOf(false) }
+    var showProspekFromSaya by remember { mutableStateOf(false) }
     var editingCashflow by remember { mutableStateOf<Cashflow?>(null) }
     var followUpProspekId by remember { mutableStateOf<String?>(null) }
     var editingProspek by remember { mutableStateOf<Prospek?>(null) }
@@ -107,7 +108,6 @@ fun AdminApp() {
             AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("info", "Info", Icons.Default.Campaign),
-            AdminTab("prospek", "Prospek", Icons.Default.Call),
             AdminTab("kas", "Kas", Icons.Default.AccountBalanceWallet),
             AdminTab("monitor_radio", "Radio", Icons.Default.Sensors),
             AdminTab("kajian", "Mabrur", Icons.Default.Mosque),
@@ -300,7 +300,7 @@ fun AdminApp() {
                 "monitor_radio" -> MonitorRadioScreen()
                 "kajian" -> {
                     if (showKajianForm) AddKajianScreen(onBack = { showKajianForm = false }, onSaved = { showKajianForm = false })
-                    else KajianListScreen(onAddClick = { showKajianForm = true })
+                    else KajianListScreen(onAddClick = { showKajianForm = true }, onBack = { showKajianForm = false; showKajianFromSaya = false })
                 }
                 "kas" -> {
                     when {
@@ -319,13 +319,22 @@ fun AdminApp() {
                 "info" -> PengumumanScreen()
                 "admin" -> AdminListScreen()
                 "saya" -> {
-                    if (showKajianFromSaya) {
+                    if (showProspekFromSaya) {
+                        ProspekListScreen(
+                            onAddClick = { showAddProspek = true },
+                            onProspekClick = { },
+                            onEditClick = { editingProspek = it; showAddProspek = true },
+                            onDeleteClick = { prospek -> kotlinx.coroutines.MainScope().launch { ProspekRepository.delete(prospek.id) } },
+                            onBack = { showProspekFromSaya = false }
+                        )
+                    } else if (showKajianFromSaya) {
                         if (showKajianForm) AddKajianScreen(onBack = { showKajianForm = false }, onSaved = { showKajianForm = false })
-                        else KajianListScreen(onAddClick = { showKajianForm = true })
+                        else KajianListScreen(onAddClick = { showKajianForm = true }, onBack = { showKajianFromSaya = false })
                     } else {
                         SayaScreen(
                             onLoggedOut = { isLoggedIn = false; selectedTab = 0; editingJamaah = null },
-                            onKajianClick = { showKajianFromSaya = true; showKajianForm = false } // Kirim callback
+                            onKajianClick = { showKajianFromSaya = true; showKajianForm = false },
+                            onProspekClick = { showProspekFromSaya = true } // Kirim callback
                         )
                     }
                 }
