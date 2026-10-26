@@ -128,7 +128,8 @@ fun AdminApp() {
             AdminTab("skrining", "Skrining", Icons.Default.Assignment),
             AdminTab("bukti", "Bukti", Icons.Default.Payments),
             AdminTab("info", "Info", Icons.Default.Campaign),
-            AdminTab("prospek", "Prospek", Icons.Default.Call),
+            AdminTab("monitor_radio", "Radio", Icons.Default.Sensors),
+
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
     }
