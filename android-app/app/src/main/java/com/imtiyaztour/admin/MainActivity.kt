@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Mosque
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.*
@@ -72,6 +73,7 @@ fun AdminApp() {
     var showAddJamaah by remember { mutableStateOf(false) }
     var showAddProspek by remember { mutableStateOf(false) }
     var showCashflowForm by remember { mutableStateOf(false) }
+    var showKajianForm by remember { mutableStateOf(false) }
     var editingCashflow by remember { mutableStateOf<Cashflow?>(null) }
     var followUpProspekId by remember { mutableStateOf<String?>(null) }
     var editingProspek by remember { mutableStateOf<Prospek?>(null) }
@@ -106,6 +108,7 @@ fun AdminApp() {
             AdminTab("prospek", "Prospek", Icons.Default.Call),
             AdminTab("kas", "Kas", Icons.Default.AccountBalanceWallet),
             AdminTab("monitor_radio", "Radio", Icons.Default.Sensors),
+            AdminTab("kajian", "Mabrur", Icons.Default.Mosque),
             AdminTab("admin", "Admin", Icons.Default.Person),
             AdminTab("saya", "Saya", Icons.Default.AccountCircle)
         )
@@ -293,6 +296,10 @@ fun AdminApp() {
                     }
                 }
                 "monitor_radio" -> MonitorRadioScreen()
+                "kajian" -> {
+                    if (showKajianForm) AddKajianScreen(onBack = { showKajianForm = false }, onSaved = { showKajianForm = false })
+                    else KajianListScreen(onAddClick = { showKajianForm = true })
+                }
                 "kas" -> {
                     when {
                         showCashflowForm -> CashflowFormScreen(
