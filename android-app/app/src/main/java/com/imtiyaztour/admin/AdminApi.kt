@@ -92,6 +92,9 @@ interface AdminApiService {
     // Fase 2 D3: Firebase Custom Token untuk admin
     @POST("api/firebase-token-admin")
     suspend fun firebaseAdminToken(@Body body: Map<String, String>): FirebaseAdminTokenResponse
+    @POST("api/admin/admin-radio-revoke")
+    suspend fun adminRadioRevoke(@Body body: Map<String, String>): SimpleResponse
+
 }
 
 object AdminApiClient {
@@ -110,8 +113,5 @@ object AdminApiClient {
             .build()
             .create(AdminApiService::class.java)
     }
-
-    @POST("api/admin/admin-radio-revoke")
-    suspend fun adminRadioRevoke(@Body body: Map<String, String>): SimpleResponse
 
 }
