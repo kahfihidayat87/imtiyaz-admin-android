@@ -27,7 +27,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SayaScreen(onLoggedOut: () -> Unit, onKajianClick: () -> Unit = {}) {
+fun SayaScreen(onLoggedOut: (,
+    onProspekClick: () -> Unit = {}
+) -> Unit, onKajianClick: () -> Unit = {}, onProspekClick: () -> Unit = {}) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -52,6 +54,24 @@ fun SayaScreen(onLoggedOut: () -> Unit, onKajianClick: () -> Unit = {}) {
                 Spacer(Modifier.height(4.dp))
                 Text("Role: ${role.uppercase()}", fontSize = 12.sp, color = AdminTextGray)
                 Text("Admin ID: $adminId", fontSize = 11.sp, color = AdminTextGray)
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+
+        // --- TOMBOL PROSPEK ---
+        Card(
+            modifier = Modifier.fillMaxWidth().clickable { onProspekClick() },
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(1.dp)
+        ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = AdminPrimary)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("Prospek Jamaah", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Kelola data calon jamaah & follow up", fontSize = 11.sp, color = AdminTextGray)
+                }
             }
         }
         Spacer(Modifier.height(16.dp))

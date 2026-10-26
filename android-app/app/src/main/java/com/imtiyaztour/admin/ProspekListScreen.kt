@@ -26,6 +26,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProspekListScreen(
+    onBack: () -> Unit,
     onAddClick: () -> Unit,
     onProspekClick: (Prospek) -> Unit = {},
     onEditClick: (Prospek) -> Unit = {},
@@ -36,7 +37,20 @@ fun ProspekListScreen(
     val due = all.filter { it.statusEnum() == ProspekStatus.FU_DIJADWALKAN && (it.fu_date ?: Long.MAX_VALUE) <= now }
     val rest = all.filterNot { p -> due.any { it.id == p.id } }
 
-    Box(Modifier.fillMaxSize()) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Daftar Prospek") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(androidx.compose.material.icons.Icons.Default.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AdminPrimary, titleContentColor = Color.White, navigationIconContentColor = Color.White)
+            )
+        }
+    ) { pad ->
+        Box(Modifier.fillMaxSize().padding(pad)) {
         if (all.isEmpty()) {
             Column(
                 Modifier.fillMaxSize().padding(24.dp),
@@ -134,4 +148,7 @@ private fun ProspekCard(p: Prospek, highlight: Boolean, onClick: () -> Unit, onE
 private fun formatTgl(ms: Long?): String {
     if (ms == null || ms <= 0L) return "-"
     return SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(ms))
+}
+
+    }
 }
