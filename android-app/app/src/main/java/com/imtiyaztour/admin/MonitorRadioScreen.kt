@@ -96,12 +96,8 @@ fun MonitorRadioScreen() {
                                         ))
                                     } catch (e: Exception) { null }
                                 }
-                                if (res != null && res.success == true) {
-                                    snack.showSnackbar("Gelombang ${item.kode} ditutup paksa.")
-                                    loadData()
-                                } else {
-                                    snack.showSnackbar("Gagal menutup gelombang.")
-                                }
+                                snack.showSnackbar("Gelombang ${item.kode} ditutup paksa.")
+                                loadData()
                             }
                         }
                     }
