@@ -1,9 +1,11 @@
 package com.imtiyaztour.admin
 
 import android.util.Log
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -14,6 +16,17 @@ object ProspekRepository {
     private fun col() = FirebaseFirestore.getInstance().collection(COL)
 
     fun observeAll(): Flow<List<Prospek>> = callbackFlow {
+        // === AUTH GUARD: tunggu Firebase Auth siap sebelum attach listener ===
+        var waited = 0L
+        while (FirebaseAuth.getInstance().currentUser == null && waited < 10_000L) {
+            delay(200); waited += 200
+        }
+        if (FirebaseAuth.getInstance().currentUser == null) {
+            Log.w("ProspekRepo", "Auth timeout (10s) — flow dihentikan")
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
         val listener = col()
             .orderBy("created_at", Query.Direction.DESCENDING)
             .addSnapshotListener { snap, err ->
@@ -31,6 +44,17 @@ object ProspekRepository {
     }
 
     fun observePendingFu(): Flow<List<Prospek>> = callbackFlow {
+        // === AUTH GUARD: tunggu Firebase Auth siap sebelum attach listener ===
+        var waited = 0L
+        while (FirebaseAuth.getInstance().currentUser == null && waited < 10_000L) {
+            delay(200); waited += 200
+        }
+        if (FirebaseAuth.getInstance().currentUser == null) {
+            Log.w("ProspekRepo", "Auth timeout (10s) — flow dihentikan")
+            trySend(emptyList())
+            close()
+            return@callbackFlow
+        }
         val listener = col()
             .whereEqualTo("status", ProspekStatus.FU_DIJADWALKAN.name)
             .whereLessThanOrEqualTo("fu_date", System.currentTimeMillis())
