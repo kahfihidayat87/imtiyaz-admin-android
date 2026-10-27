@@ -1,13 +1,13 @@
 package com.imtiyaztour.admin
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Card
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.material.icons.filled.MenuBook
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -27,9 +27,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SayaScreen(onLoggedOut: (,
+fun SayaScreen(
+    onLoggedOut: () -> Unit,
+    onKajianClick: () -> Unit = {},
     onProspekClick: () -> Unit = {}
-) -> Unit, onKajianClick: () -> Unit = {}, onProspekClick: () -> Unit = {}) {
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 

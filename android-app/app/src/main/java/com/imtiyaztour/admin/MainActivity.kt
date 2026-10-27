@@ -286,6 +286,7 @@ fun AdminApp() {
                             onSaved = { showAddProspek = false; editingProspek = null }
                         )
                         else -> ProspekListScreen(
+                            onBack = { },
                             onAddClick = { showAddProspek = true; editingProspek = null },
                             onProspekClick = { },
                             onEditClick = { editingProspek = it; showAddProspek = true },

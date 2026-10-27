@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -43,7 +44,7 @@ fun ProspekListScreen(
                 title = { Text("Daftar Prospek") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(androidx.compose.material.icons.Icons.Default.ArrowBack, contentDescription = "Kembali")
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = AdminPrimary, titleContentColor = Color.White, navigationIconContentColor = Color.White)
@@ -90,6 +91,7 @@ fun ProspekListScreen(
             Icon(Icons.Default.Add, contentDescription = "Tambah Prospek", tint = Color.White)
         }
     }
+}
 }
 
 @Composable
@@ -148,7 +150,4 @@ private fun ProspekCard(p: Prospek, highlight: Boolean, onClick: () -> Unit, onE
 private fun formatTgl(ms: Long?): String {
     if (ms == null || ms <= 0L) return "-"
     return SimpleDateFormat("dd MMM yyyy", Locale("id", "ID")).format(Date(ms))
-}
-
-    }
 }
