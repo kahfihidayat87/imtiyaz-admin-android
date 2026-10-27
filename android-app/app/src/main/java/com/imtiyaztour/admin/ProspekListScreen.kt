@@ -70,6 +70,7 @@ fun ProspekListScreen(
         } else {
             LazyColumn(
                 Modifier.fillMaxSize().padding(16.dp),
+                contentPadding = PaddingValues(bottom = 80.dp), // Space untuk FAB
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 if (due.isNotEmpty()) {
@@ -86,7 +87,7 @@ fun ProspekListScreen(
 
         FloatingActionButton(
             onClick = onAddClick,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp).padding(bottom = 16.dp),
             containerColor = AdminPrimary
         ) {
             Icon(Icons.Default.Add, contentDescription = "Tambah Prospek", tint = Color.White)

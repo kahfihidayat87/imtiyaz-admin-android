@@ -178,7 +178,8 @@ fun AddProspekScreen(
                                 saving = false
                                 res.onSuccess { newId ->
                                     createdId = newId
-                                    snack.showSnackbar("Prospek tersimpan")
+                                    snack.showSnackbar("Prospek tersimpan. Silakan set jadwal Follow Up.")
+                                    // Tidak langsung onSaved() agar tombol FU muncul
                                 }.onFailure {
                                     snack.showSnackbar("Gagal simpan: ${it.message}")
                                 }

@@ -53,6 +53,7 @@ fun SayaScreen(
             .background(AdminBg)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
+            .padding(bottom = 80.dp) // Space untuk Bottom Navigation Bar
     ) {
         Text("Profil Admin", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = AdminPrimary)
         Spacer(Modifier.height(16.dp))
@@ -91,7 +92,7 @@ fun SayaScreen(
             }
         }
         }  // endif showProspek
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
         // --- TOMBOL JADWAL KAJIAN MABRUR (hanya untuk role berwenang) ---
         if (showKajian) {
