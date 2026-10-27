@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -93,8 +94,25 @@ fun AdminListScreen(onBack: () -> Unit = {}) {
         return
     }
 
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Kelola Admin") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = AdminPrimary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
+            )
+        }
+    ) { pad ->
     LazyColumn(
-        Modifier.fillMaxSize().padding(16.dp),
+        Modifier.fillMaxSize().padding(pad).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         item {
@@ -203,6 +221,7 @@ fun AdminListScreen(onBack: () -> Unit = {}) {
         }
         item { Spacer(Modifier.height(12.dp)) }
     }
+    }  // Scaffold
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

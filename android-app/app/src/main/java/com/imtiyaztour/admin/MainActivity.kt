@@ -78,6 +78,7 @@ fun AdminApp() {
     var showKajianFromSaya by remember { mutableStateOf(false) }
     var showProspekFromSaya by remember { mutableStateOf(false) }
     var showAdminFromSaya by remember { mutableStateOf(false) }
+    var editingKajian by remember { mutableStateOf<Kajian?>(null) }
     var editingCashflow by remember { mutableStateOf<Cashflow?>(null) }
     var followUpProspekId by remember { mutableStateOf<String?>(null) }
     var editingProspek by remember { mutableStateOf<Prospek?>(null) }
@@ -299,8 +300,16 @@ fun AdminApp() {
                 }
                 "monitor_radio" -> MonitorRadioScreen()
                 "kajian" -> {
-                    if (showKajianForm) AddKajianScreen(onBack = { showKajianForm = false }, onSaved = { showKajianForm = false })
-                    else KajianListScreen(onAddClick = { showKajianForm = true }, onBack = { showKajianForm = false; showKajianFromSaya = false })
+                    if (showKajianForm) AddKajianScreen(
+                        onBack = { showKajianForm = false; editingKajian = null },
+                        onSaved = { showKajianForm = false; editingKajian = null },
+                        existingKajian = editingKajian
+                    )
+                    else KajianListScreen(
+                        onAddClick = { showKajianForm = true; editingKajian = null },
+                        onEdit = { editingKajian = it; showKajianForm = true },
+                        onBack = { showKajianForm = false; showKajianFromSaya = false }
+                    )
                 }
                 "kas" -> {
                     when {
@@ -334,12 +343,20 @@ fun AdminApp() {
                         )
                         showAdminFromSaya -> AdminListScreen(onBack = { showAdminFromSaya = false })
                         showKajianFromSaya -> {
-                            if (showKajianForm) AddKajianScreen(onBack = { showKajianForm = false }, onSaved = { showKajianForm = false })
-                            else KajianListScreen(onAddClick = { showKajianForm = true }, onBack = { showKajianFromSaya = false })
+                            if (showKajianForm) AddKajianScreen(
+                                onBack = { showKajianForm = false; editingKajian = null },
+                                onSaved = { showKajianForm = false; editingKajian = null },
+                                existingKajian = editingKajian
+                            )
+                            else KajianListScreen(
+                                onAddClick = { showKajianForm = true; editingKajian = null },
+                                onEdit = { editingKajian = it; showKajianForm = true },
+                                onBack = { showKajianFromSaya = false; showKajianForm = false }
+                            )
                         }
                         else -> SayaScreen(
                             onLoggedOut = { isLoggedIn = false; selectedTab = 0; editingJamaah = null },
-                            onKajianClick = { showKajianFromSaya = true; showKajianForm = false },
+                            onKajianClick = { showKajianFromSaya = true; showKajianForm = false; editingKajian = null },
                             onProspekClick = { showProspekFromSaya = true },
                             onAdminClick = { showAdminFromSaya = true },
                             showProspek = role in listOf("admin", "super_admin"),

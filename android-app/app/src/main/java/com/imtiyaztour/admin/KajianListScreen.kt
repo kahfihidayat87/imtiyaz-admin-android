@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,9 +28,13 @@ import java.util.Locale
 @Composable
 fun KajianListScreen(
     onAddClick: () -> Unit,
+    onEdit: (Kajian) -> Unit = {},
     onBack: () -> Unit
 ) {
-    val list by KajianRepository.observeAll().collectAsState(initial = emptyList())
+    val flow = remember { KajianRepository.observeAll() }
+    val list by flow.collectAsState(initial = emptyList())
+    var menuTarget by remember { mutableStateOf<Kajian?>(null) }
+    var confirmDelete by remember { mutableStateOf<Kajian?>(null) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -63,10 +69,28 @@ fun KajianListScreen(
                             colors = CardDefaults.cardColors(containerColor = Color.White)
                         ) {
                             Column(Modifier.padding(16.dp)) {
-                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text(item.tema, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AdminPrimary)
-                                    IconButton(onClick = { scope.launch { KajianRepository.delete(item.id) } }) {
-                                        Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color(0xFFDC2626))
+                                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
+                                    Text(item.tema, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = AdminPrimary,
+                                        modifier = Modifier.weight(1f))
+                                    Box {
+                                        IconButton(onClick = { menuTarget = item }, modifier = Modifier.size(32.dp)) {
+                                            Icon(Icons.Default.MoreVert, contentDescription = "Menu", tint = AdminTextGray)
+                                        }
+                                        DropdownMenu(
+                                            expanded = menuTarget?.id == item.id,
+                                            onDismissRequest = { menuTarget = null }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text("Edit Jadwal") },
+                                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = AdminPrimary) },
+                                                onClick = { menuTarget = null; onEdit(item) }
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text("Hapus", color = Color(0xFFDC2626)) },
+                                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFDC2626)) },
+                                                onClick = { menuTarget = null; confirmDelete = item }
+                                            )
+                                        }
                                     }
                                 }
                                 Text("Pemateri: ${item.pemateri}", fontSize = 13.sp)
@@ -90,27 +114,47 @@ fun KajianListScreen(
             ) { Icon(Icons.Default.Add, null, tint = Color.White) }
         }
     }
+
+    if (confirmDelete != null) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = null },
+            title = { Text("Hapus Jadwal Kajian?") },
+            text = { Text("\"" + confirmDelete!!.tema + "\" akan dihapus permanen.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val id = confirmDelete!!.id
+                    confirmDelete = null
+                    scope.launch { KajianRepository.delete(id) }
+                }) { Text("HAPUS", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = null }) { Text("Batal") }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddKajianScreen(
     onBack: () -> Unit,
-    onSaved: () -> Unit
+    onSaved: () -> Unit,
+    existingKajian: Kajian? = null
 ) {
     val scope = rememberCoroutineScope()
-    var tema by remember { mutableStateOf("") }
-    var pemateri by remember { mutableStateOf("") }
-    var tanggal by remember { mutableStateOf(System.currentTimeMillis()) }
-    var jam by remember { mutableStateOf("") }
-    var kode by remember { mutableStateOf("") }
+    var tema by remember { mutableStateOf(existingKajian?.tema ?: "") }
+    var pemateri by remember { mutableStateOf(existingKajian?.pemateri ?: "") }
+    var tanggal by remember { mutableStateOf(existingKajian?.tanggal ?: System.currentTimeMillis()) }
+    var jam by remember { mutableStateOf(existingKajian?.jam ?: "") }
+    var kode by remember { mutableStateOf(existingKajian?.kode_gelombang ?: "") }
+    val isEditing = existingKajian != null
     var showDatePicker by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tambah Jadwal Kajian") },
+                title = { Text(if (isEditing) "Edit Jadwal Kajian" else "Tambah Jadwal Kajian") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Kembali")
@@ -144,7 +188,16 @@ fun AddKajianScreen(
                 onClick = {
                     scope.launch {
                         saving = true
-                        val res = KajianRepository.create(Kajian(tema = tema, pemateri = pemateri, tanggal = tanggal, jam = jam, kode_gelombang = kode))
+                        val kajian = Kajian(
+                            id = existingKajian?.id ?: "",
+                            tema = tema, pemateri = pemateri, tanggal = tanggal,
+                            jam = jam, kode_gelombang = kode
+                        )
+                        val res = if (isEditing && existingKajian != null) {
+                            KajianRepository.update(existingKajian.id, kajian)
+                        } else {
+                            KajianRepository.create(kajian)
+                        }
                         saving = false
                         if (res.isSuccess) onSaved()
                     }
@@ -152,7 +205,7 @@ fun AddKajianScreen(
                 enabled = tema.isNotBlank() && pemateri.isNotBlank() && jam.isNotBlank() && !saving,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AdminPrimary)
-            ) { Text(if (saving) "MENYIMPAN..." else "SIMPAN JADWAL") }
+            ) { Text(if (saving) "MENYIMPAN..." else if (isEditing) "SIMPAN PERUBAHAN" else "SIMPAN JADWAL") }
         }
     }
 

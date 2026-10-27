@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,7 +47,13 @@ fun SayaScreen(
     val adminId = Prefs.getAdminId(context)
     val token = Prefs.getToken(context)
 
-    Column(Modifier.fillMaxSize().background(AdminBg).padding(16.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(AdminBg)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+    ) {
         Text("Profil Admin", fontWeight = FontWeight.Bold, fontSize = 22.sp, color = AdminPrimary)
         Spacer(Modifier.height(16.dp))
 

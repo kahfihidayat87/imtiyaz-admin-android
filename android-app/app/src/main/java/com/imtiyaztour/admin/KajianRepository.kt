@@ -32,7 +32,21 @@ object KajianRepository {
         col().add(data).await().id
     }
 
-    suspend fun delete(id: String): Result<Unit> = runCatching {
+    suspend fun update(id: String, k: Kajian): Result<Unit> = runCatching {
+    FirebaseFirestore.getInstance().collection("kajian").document(id).update(
+        mapOf(
+            "tema" to k.tema,
+            "pemateri" to k.pemateri,
+            "tanggal" to k.tanggal,
+            "jam" to k.jam,
+            "kode_gelombang" to k.kode_gelombang,
+            "updated_at" to System.currentTimeMillis()
+        )
+    ).await()
+    Unit
+}
+
+suspend fun delete(id: String): Result<Unit> = runCatching {
         col().document(id).delete().await()
         Unit
     }
