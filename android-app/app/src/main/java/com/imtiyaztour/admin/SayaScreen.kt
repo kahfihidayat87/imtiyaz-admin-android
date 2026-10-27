@@ -30,7 +30,9 @@ import kotlinx.coroutines.withContext
 fun SayaScreen(
     onLoggedOut: () -> Unit,
     onKajianClick: () -> Unit = {},
-    onProspekClick: () -> Unit = {}
+    onProspekClick: () -> Unit = {},
+    showProspek: Boolean = true,
+    showKajian: Boolean = true
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -60,7 +62,8 @@ fun SayaScreen(
         }
         Spacer(Modifier.height(16.dp))
 
-        // --- TOMBOL PROSPEK ---
+        // --- TOMBOL PROSPEK (hanya untuk role yang berwenang) ---
+        if (showProspek) {
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onProspekClick() },
             shape = RoundedCornerShape(12.dp),
@@ -76,9 +79,11 @@ fun SayaScreen(
                 }
             }
         }
+        }  // endif showProspek
         Spacer(Modifier.height(16.dp))
 
-        // --- TOMBOL JADWAL KAJIAN MABRUR ---
+        // --- TOMBOL JADWAL KAJIAN MABRUR (hanya untuk role berwenang) ---
+        if (showKajian) {
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onKajianClick() },
             shape = RoundedCornerShape(12.dp),
@@ -94,6 +99,7 @@ fun SayaScreen(
                 }
             }
         }
+        }  // endif showKajian
         // ------------------------------------
 
         Spacer(Modifier.height(16.dp))

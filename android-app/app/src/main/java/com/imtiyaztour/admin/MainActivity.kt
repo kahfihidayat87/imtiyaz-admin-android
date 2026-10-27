@@ -335,7 +335,9 @@ fun AdminApp() {
                         SayaScreen(
                             onLoggedOut = { isLoggedIn = false; selectedTab = 0; editingJamaah = null },
                             onKajianClick = { showKajianFromSaya = true; showKajianForm = false },
-                            onProspekClick = { showProspekFromSaya = true } // Kirim callback
+                            onProspekClick = { showProspekFromSaya = true },
+                            showProspek = role in listOf("admin", "super_admin"),
+                            showKajian = role in listOf("admin", "super_admin")
                         )
                     }
                 }
