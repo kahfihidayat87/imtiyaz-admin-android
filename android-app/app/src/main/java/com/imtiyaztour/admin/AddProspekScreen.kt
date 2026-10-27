@@ -172,7 +172,7 @@ fun AddProspekScreen(
                                             tgl_kantor = tglKantor,
                                             catatan = catatan.trim()
                                         ),
-                                        createdBy = "admin"
+                                        createdBy = Prefs.getAdminId(context)
                                     )
                                 }
                                 saving = false

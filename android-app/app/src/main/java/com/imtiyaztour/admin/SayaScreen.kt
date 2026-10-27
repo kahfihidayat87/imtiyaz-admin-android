@@ -2,6 +2,7 @@ package com.imtiyaztour.admin
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Card
 import androidx.compose.foundation.layout.padding
@@ -31,8 +32,10 @@ fun SayaScreen(
     onLoggedOut: () -> Unit,
     onKajianClick: () -> Unit = {},
     onProspekClick: () -> Unit = {},
+    onAdminClick: () -> Unit = {},
     showProspek: Boolean = true,
-    showKajian: Boolean = true
+    showKajian: Boolean = true,
+    showAdmin: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -100,6 +103,24 @@ fun SayaScreen(
             }
         }
         }  // endif showKajian
+        if (showAdmin) {
+        Card(
+            modifier = Modifier.fillMaxWidth().clickable { onAdminClick() },
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(1.dp)
+        ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.AdminPanelSettings, contentDescription = null, tint = AdminPrimary)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("Kelola Admin", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Tambah, edit, nonaktifkan akun admin", fontSize = 11.sp, color = AdminTextGray)
+                }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        }  // endif showAdmin
         // ------------------------------------
 
         Spacer(Modifier.height(16.dp))

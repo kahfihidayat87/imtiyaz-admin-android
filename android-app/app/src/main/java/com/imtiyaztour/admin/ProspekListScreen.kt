@@ -33,7 +33,8 @@ fun ProspekListScreen(
     onEditClick: (Prospek) -> Unit = {},
     onDeleteClick: (Prospek) -> Unit = {}
 ) {
-    val all by ProspekRepository.observeAll().collectAsState(initial = emptyList())
+    val flow = remember { ProspekRepository.observeAll() }
+    val all by flow.collectAsState(initial = emptyList())
     val now = System.currentTimeMillis()
     val due = all.filter { it.statusEnum() == ProspekStatus.FU_DIJADWALKAN && (it.fu_date ?: Long.MAX_VALUE) <= now }
     val rest = all.filterNot { p -> due.any { it.id == p.id } }

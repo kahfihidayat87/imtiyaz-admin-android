@@ -44,7 +44,8 @@ private fun roleLabel(role: String): String = when (role) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AdminListScreen() {
+fun AdminListScreen(onBack: () -> Unit = {}) {
+    androidx.activity.compose.BackHandler(enabled = true) { onBack() }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val adminId = Prefs.getAdminId(context)
