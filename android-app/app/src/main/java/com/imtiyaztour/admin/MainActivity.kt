@@ -78,6 +78,7 @@ fun AdminApp() {
     var showKajianFromSaya by remember { mutableStateOf(false) }
     var showProspekFromSaya by remember { mutableStateOf(false) }
     var showAdminFromSaya by remember { mutableStateOf(false) }
+    var showKantorFromSaya by remember { mutableStateOf(false) }
     var editingKajian by remember { mutableStateOf<Kajian?>(null) }
     var editingCashflow by remember { mutableStateOf<Cashflow?>(null) }
     var followUpProspekId by remember { mutableStateOf<String?>(null) }
@@ -342,6 +343,7 @@ fun AdminApp() {
                             onBack = { showProspekFromSaya = false }
                         )
                         showAdminFromSaya -> AdminListScreen(onBack = { showAdminFromSaya = false })
+                        showKantorFromSaya -> KantorListScreen(onBack = { showKantorFromSaya = false })
                         showKajianFromSaya -> {
                             if (showKajianForm) AddKajianScreen(
                                 onBack = { showKajianForm = false; editingKajian = null },
@@ -359,6 +361,7 @@ fun AdminApp() {
                             onKajianClick = { showKajianFromSaya = true; showKajianForm = false; editingKajian = null },
                             onProspekClick = { showProspekFromSaya = true },
                             onAdminClick = { showAdminFromSaya = true },
+                            onKantorClick = { showKantorFromSaya = true },
                             showProspek = role in listOf("admin", "super_admin"),
                             showKajian = role in listOf("admin", "super_admin"),
                             showAdmin = role == "super_admin"

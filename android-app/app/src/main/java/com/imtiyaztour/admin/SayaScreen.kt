@@ -31,6 +31,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun SayaScreen(
+    onKantorClick: () -> Unit = {},
     onLoggedOut: () -> Unit,
     onKajianClick: () -> Unit = {},
     onProspekClick: () -> Unit = {},
@@ -113,6 +114,24 @@ fun SayaScreen(
         }
         }  // endif showKajian
         if (showAdmin) {
+        Card(
+            modifier = Modifier.fillMaxWidth().clickable { onKantorClick() },
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(1.dp)
+        ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = AdminPrimary)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("Kantor Operasional", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Kelola data perwakilan kantor", fontSize = 11.sp, color = AdminTextGray)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        }
+        
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onAdminClick() },
             shape = RoundedCornerShape(12.dp),
