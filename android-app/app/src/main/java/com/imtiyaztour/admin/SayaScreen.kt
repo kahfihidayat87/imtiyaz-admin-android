@@ -2,6 +2,7 @@ package com.imtiyaztour.admin
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Card
@@ -130,7 +131,6 @@ fun SayaScreen(
             }
         }
         Spacer(Modifier.height(12.dp))
-        }
         
         Card(
             modifier = Modifier.fillMaxWidth().clickable { onAdminClick() },
