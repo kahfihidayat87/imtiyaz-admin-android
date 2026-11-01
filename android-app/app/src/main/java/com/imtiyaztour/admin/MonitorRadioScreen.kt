@@ -96,7 +96,7 @@ fun MonitorRadioScreen() {
                                         ))
                                     } catch (e: Exception) { null }
                                 }
-                                snack.showSnackbar("Gelombang ${item.kode} ditutup paksa.")
+                                snack.showSnackbar("Gelombang ${item.kode} dihapus permanen.")
                                 loadData()
                             }
                         }
@@ -134,7 +134,7 @@ private fun MonitorCard(item: GelombangMonitor, onRevoke: () -> Unit) {
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
                 modifier = Modifier.fillMaxWidth().height(36.dp)
             ) {
-                Text("TUTUP PAKSA", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("HAPUS GELOMBANG", fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -142,7 +142,7 @@ private fun MonitorCard(item: GelombangMonitor, onRevoke: () -> Unit) {
     if (showConfirm) {
         AlertDialog(
             onDismissRequest = { showConfirm = false },
-            title = { Text("Tutup Paksa?") },
+            title = { Text("Hapus Gelombang?") },
             text = { Text("Gelombang ${item.kode} akan dihentikan secara paksa.") },
             confirmButton = {
                 TextButton(onClick = { showConfirm = false; onRevoke() }) {
