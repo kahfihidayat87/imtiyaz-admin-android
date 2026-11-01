@@ -40,7 +40,7 @@ fun MonitorRadioScreen() {
             loading = true
             try {
                 val snap = FirebaseFirestore.getInstance().collection("gelombang")
-                    .whereEqualTo("is_active", true)
+                    
                     .orderBy("created_at", Query.Direction.DESCENDING)
                     .get().await()
                 list = snap.documents.mapNotNull { it.toObject(GelombangMonitor::class.java) }
@@ -76,7 +76,7 @@ fun MonitorRadioScreen() {
             if (loading || refreshing) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center), color = AdminPrimary)
             } else if (list.isEmpty()) {
-                Text("Tidak ada gelombang aktif", modifier = Modifier.align(Alignment.Center), color = AdminTextGray)
+                Text("Tidak ada gelombang di database", modifier = Modifier.align(Alignment.Center), color = AdminTextGray)
             } else {
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp),
