@@ -41,9 +41,9 @@ fun MonitorRadioScreen() {
             try {
                 val snap = FirebaseFirestore.getInstance().collection("gelombang")
                     
-                    .orderBy("created_at", Query.Direction.DESCENDING)
+                    
                     .get().await()
-                list = snap.documents.mapNotNull { it.toObject(GelombangMonitor::class.java) }
+                list = snap.documents.mapNotNull { it.toObject(GelombangMonitor::class.java) }.sortedByDescending { it.created_at }
             } catch (e: Exception) {
                 snack.showSnackbar("Gagal memuat: ${e.message}")
             }
