@@ -16,7 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -40,15 +39,16 @@ fun MonitorRadioScreen() {
             loading = true
             try {
                 val snap = FirebaseFirestore.getInstance().collection("gelombang")
-                    
-                    
                     .get().await()
-                list = snap.documents.mapNotNull { it.toObject(GelombangMonitor::class.java) }.sortedByDescending { it.created_at }
+                list = snap.documents
+                    .mapNotNull { it.toObject(GelombangMonitor::class.java) }
+                    .sortedByDescending { it.created_at }
             } catch (e: Exception) {
-                snack.showSnackbar("Gagal memuat: ${e.message}")
+                snack.showSnackbar("Gagal memuat: ${e.message ?: "kesalahan tidak diketahui"}")
+            } finally {
+                loading = false
+                refreshing = false
             }
-            loading = false
-            refreshing = false
         }
     }
 
@@ -87,17 +87,29 @@ fun MonitorRadioScreen() {
                             scope.launch {
                                 val adminId = Prefs.getAdminId(context)
                                 val token = Prefs.getToken(context)
-                                val res = withContext(Dispatchers.IO) {
-                                    try {
-                                        AdminApiClient.service.adminRadioRevoke(mapOf(
-                                            "admin_id" to adminId,
-                                            "token" to token,
-                                            "kode" to item.kode
-                                        ))
-                                    } catch (e: Exception) { null }
+                                val result = withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        AdminApiClient.service.adminRadioRevoke(
+                                            mapOf(
+                                                "admin_id" to adminId,
+                                                "token" to token,
+                                                "kode" to item.kode
+                                            )
+                                        )
+                                    }
                                 }
-                                snack.showSnackbar("Gelombang ${item.kode} dihapus permanen.")
-                                loadData()
+
+                                val response = result.getOrNull()
+                                if (result.isSuccess && response?.success == true) {
+                                    snack.showSnackbar("Gelombang ${item.kode} berhasil dihapus.")
+                                    loadData()
+                                } else {
+                                    val message = response?.error
+                                        ?: response?.message
+                                        ?: result.exceptionOrNull()?.localizedMessage
+                                        ?: "Server tidak mengonfirmasi penghapusan."
+                                    snack.showSnackbar("Gagal menghapus gelombang ${item.kode}: $message")
+                                }
                             }
                         }
                     }
@@ -111,7 +123,7 @@ fun MonitorRadioScreen() {
 private fun MonitorCard(item: GelombangMonitor, onRevoke: () -> Unit) {
     var showConfirm by remember { mutableStateOf(false) }
     val sdf = SimpleDateFormat("HH:mm", Locale("id", "ID"))
-    
+
     Card(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -143,10 +155,10 @@ private fun MonitorCard(item: GelombangMonitor, onRevoke: () -> Unit) {
         AlertDialog(
             onDismissRequest = { showConfirm = false },
             title = { Text("Hapus Gelombang?") },
-            text = { Text("Gelombang ${item.kode} akan dihentikan secara paksa.") },
+            text = { Text("Gelombang ${item.kode} akan dihentikan dan dihapus permanen.") },
             confirmButton = {
                 TextButton(onClick = { showConfirm = false; onRevoke() }) {
-                    Text("TUTUP", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold)
+                    Text("HAPUS", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = { TextButton(onClick = { showConfirm = false }) { Text("BATAL") } }
